@@ -1,1 +1,1 @@
-GRANT ALL PRIVILEGES ON *.* TO 'uple'@'%';
+GRANT ALL PRIVILEGES ON *.* TO 'test'@'%';

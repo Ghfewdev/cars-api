@@ -2,9 +2,9 @@ FROM mysql:8.3.0
 
 WORKDIR /app
 
-MAINTAINER uple@gmail.com
+MAINTAINER test@gmail.com
 ENV MYSQL_ROOT_PASSWORD 4321
-ENV MYSQL_USER uple
+ENV MYSQL_USER test
 ENV MYSQL_PASSWORD 4321
 ADD data.sql /docker-entrypoint-initdb.d
 
