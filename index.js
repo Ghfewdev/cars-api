@@ -48,6 +48,23 @@ app.post('/login', jsonParser, (req, res, next) => {
     })
 })
 
+app.put('/useredit', jsonParser, (req, res, next) => {
+    bcrypt.hash(req.body.password, saltRounds, (err, hash) => {
+        var Isql = "UPDATE users SET us_password = ?, us_name = ? WHERE us_id = ?;"
+        var IV = [hash, req.body.name, req.body.id]
+        conn.execute(Isql, IV, (err, results, fields) => {
+            if (err) {
+                res.json({ status: 'error', massage: err })
+                return
+            } else
+                res.json({ status: 'ok' })
+
+        })
+
+    });
+
+})
+
 app.post('/authen', jsonParser, (req, res, next) => {
     try {
         const token = req.headers.authorization.split(" ")[1];
@@ -165,49 +182,112 @@ app.get("/excal/:id", (req, res) => {
         ws.cell(1, 1).string("ลำดับที่");
         ws.cell(1, 2).string("โรงพยาบาล");
         ws.cell(1, 3).string("วันที่จอง");
-        ws.cell(1, 4).string("เลขบัตรประชาชน");
-        ws.cell(1, 5).string("คำนำหน้าชื่อ");
-        ws.cell(1, 6).string("ชื่อ");
-        ws.cell(1, 7).string("นามสกุล");
-        ws.cell(1, 8).string("อายุ(ปี)");
-        ws.cell(1, 9).string("บ้านเลขที่");
-        ws.cell(1, 10).string("ถนน");
-        ws.cell(1, 11).string("แขวง");
-        ws.cell(1, 12).string("เขต");
-        ws.cell(1, 13).string("รหัสไปรษณี");
-        ws.cell(1, 14).string("เบอร์โทรศัพท์");
-        ws.cell(1, 15).string("วันที่ขอรถ");
-        ws.cell(1, 16).string("วิธีการ");
-        ws.cell(1, 17).string("ต้นทาง");
-        ws.cell(1, 18).string("ปลายทาง");
-        ws.cell(1, 19).string("เงื่อนไข");
-        ws.cell(1, 20).string("ชื่อผู้บันทึก");
-        ws.cell(1, 21).string("สถานะ");
-        ws.cell(1, 22).string("หมายเหตุ");
+        ws.cell(1, 4).string("เวลาที่จอง");
+        ws.cell(1, 5).string("เลขบัตรประชาชน");
+        ws.cell(1, 6).string("คำนำหน้าชื่อ");
+        ws.cell(1, 7).string("ชื่อ");
+        ws.cell(1, 8).string("นามสกุล");
+        ws.cell(1, 9).string("อายุ(ปี)");
+        ws.cell(1, 10).string("บ้านเลขที่");
+        ws.cell(1, 11).string("ถนน");
+        ws.cell(1, 12).string("แขวง");
+        ws.cell(1, 13).string("เขต");
+        ws.cell(1, 14).string("รหัสไปรษณี");
+        ws.cell(1, 15).string("เบอร์โทรศัพท์");
+        ws.cell(1, 16).string("วันที่ขอรถ");
+        ws.cell(1, 17).string("เวลาที่ขอรถ");
+        ws.cell(1, 18).string("วิธีการ");
+        ws.cell(1, 19).string("สถานที่ต้นทาง");
+        ws.cell(1, 20).string("เลขที่ต้นทาง");
+        ws.cell(1, 21).string("ถนนต้นทาง");
+        ws.cell(1, 22).string("แขวงต้นทาง");
+        ws.cell(1, 23).string("เขตต้นทาง");
+        ws.cell(1, 24).string("รหัสไปรษณีต้นทาง");
+        ws.cell(1, 25).string("สถานที่ปลายทาง");
+        ws.cell(1, 26).string("เลขที่ปลายทาง");
+        ws.cell(1, 27).string("ถนนปลายทาง");
+        ws.cell(1, 28).string("แขวงปลายทาง");
+        ws.cell(1, 29).string("เขตปลายทาง");
+        ws.cell(1, 30).string("รหัสไปรษณีปลายทาง");
+        ws.cell(1, 31).string("เงื่อนไข 1");
+        ws.cell(1, 32).string("เงื่อนไข 2");
+        ws.cell(1, 33).string("เงื่อนไข 3");
+        ws.cell(1, 34).string("เงื่อนไข 4");
+        ws.cell(1, 35).string("เงื่อนไข 5");
+        ws.cell(1, 36).string("เงื่อนไข 6");
+        ws.cell(1, 37).string("เงื่อนไข 7_1");
+        ws.cell(1, 38).string("เงื่อนไข 7_2");
+        ws.cell(1, 39).string("เงื่อนไข 7_3");
+        ws.cell(1, 40).string("เงื่อนไข 7_4");
+        ws.cell(1, 41).string("เงื่อนไข 7_5");
+        ws.cell(1, 42).string("เงื่อนไข 7_6");
+        ws.cell(1, 43).string("เงื่อนไข 7_7");
+        ws.cell(1, 44).string("ชื่อผู้บันทึก");
+        ws.cell(1, 45).string("สถานะ");
+        ws.cell(1, 46).string("หมายเหตุ");
 
         t1.map((t, i) => {
+            var start
+            var end
+            var condition
+            if (t.start.split(" "))
+            start = t.start.split(" ")
+            else
+            start = t.start
+            if (t.end.split(" "))
+            end = t.end.split(" ")
+            else
+            end = t.end
+            if (t.condition.split(", "))
+            condition = t.condition.split(", ")
+            else
+            condition = t.condition
             ws.cell(i + 2, 1).number(t.fm_id);
             ws.cell(i + 2, 2).string(t.hos_name);
-            ws.cell(i + 2, 3).string(t.date);
-            ws.cell(i + 2, 4).string(t.citizen);
-            ws.cell(i + 2, 5).string(t.pre_name);
-            ws.cell(i + 2, 6).string(t.fname);
-            ws.cell(i + 2, 7).string(t.lname);
-            ws.cell(i + 2, 8).number(t.age);
-            ws.cell(i + 2, 9).string(t.house);
-            ws.cell(i + 2, 10).string(t.street);
-            ws.cell(i + 2, 11).string(t.subdis);
-            ws.cell(i + 2, 12).string(t.dis_name);
-            ws.cell(i + 2, 13).string(t.zipcode);
-            ws.cell(i + 2, 14).string(t.call);
-            ws.cell(i + 2, 15).string(t.dateres);
-            ws.cell(i + 2, 16).string(t.met_name);
-            ws.cell(i + 2, 17).string(t.start);
-            ws.cell(i + 2, 18).string(t.end);
-            ws.cell(i + 2, 19).string(t.condition);
-            ws.cell(i + 2, 20).string(t.editer);
-            ws.cell(i + 2, 21).number(t.status);
-            ws.cell(i + 2, 22).string(t.des);
+            ws.cell(i + 2, 3).string(`${t.date.getDate()}/${t.date.getMonth()}/${t.date.getFullYear()}`);
+            ws.cell(i + 2, 4).string(`${t.date.getHours()}:${t.date.getMinutes()}:${t.date.getSeconds()}`);
+            ws.cell(i + 2, 5).string(t.citizen);
+            ws.cell(i + 2, 6).string(t.pre_name);
+            ws.cell(i + 2, 7).string(t.fname);
+            ws.cell(i + 2, 8).string(t.lname);
+            ws.cell(i + 2, 9).number(t.age);
+            ws.cell(i + 2, 10).string(t.house);
+            ws.cell(i + 2, 11).string(t.street);
+            ws.cell(i + 2, 12).string(t.subdis);
+            ws.cell(i + 2, 13).string(t.dis_name);
+            ws.cell(i + 2, 14).string(t.zipcode);
+            ws.cell(i + 2, 15).string(t.call);
+            ws.cell(i + 2, 16).string(`${t.dateres.getDate()}/${t.dateres.getMonth()}/${t.dateres.getFullYear()}`);
+            ws.cell(i + 2, 17).string(`${t.dateres.getHours()}:${t.dateres.getMinutes()}:${t.dateres.getSeconds()}`);
+            ws.cell(i + 2, 18).string(t.met_name);
+            ws.cell(i + 2, 19).string(start[0]);
+            ws.cell(i + 2, 20).string(start[1]);
+            ws.cell(i + 2, 21).string(start[2]);
+            ws.cell(i + 2, 22).string(start[3]);
+            ws.cell(i + 2, 23).string(start[4]);
+            ws.cell(i + 2, 24).string(start[6]);
+            ws.cell(i + 2, 25).string(end[0]);
+            ws.cell(i + 2, 26).string(end[1]);
+            ws.cell(i + 2, 27).string(end[2]);
+            ws.cell(i + 2, 28).string(end[3]);
+            ws.cell(i + 2, 29).string(end[4]);
+            ws.cell(i + 2, 30).string(end[6]);
+            ws.cell(i + 2, 31).string(condition[0]);
+            ws.cell(i + 2, 32).string(condition[1]);
+            ws.cell(i + 2, 33).string(condition[2]);
+            ws.cell(i + 2, 34).string(condition[3]);
+            ws.cell(i + 2, 35).string(condition[4]);
+            ws.cell(i + 2, 36).string(condition[5]);
+            ws.cell(i + 2, 37).string(condition[6]);
+            ws.cell(i + 2, 38).string(condition[7]);
+            ws.cell(i + 2, 39).string(condition[8]);
+            ws.cell(i + 2, 40).string(condition[9]);
+            ws.cell(i + 2, 41).string(condition[10]);
+            ws.cell(i + 2, 42).string(condition[11]);
+            ws.cell(i + 2, 43).string(condition[12]);
+            ws.cell(i + 2, 44).string(t.editer);
+            ws.cell(i + 2, 45).string(String(t.status));
+            ws.cell(i + 2, 46).string(t.des);
         })
 
         wb.write('ExcelFile.xlsx', res);
