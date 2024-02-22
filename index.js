@@ -95,8 +95,8 @@ app.get("/district", jsonParser, (req, res, next) => {
 })
 
 app.post('/fill', jsonParser, (req, res, next) => {
-    var Isql = "INSERT INTO `form` (`hos_id`, `date`, `citizen`, `pre_id`, `fname`, `lname`, `age`, `house`, `street`, `dis_id`, `subdis`, `zipcode`, `call`, `dateres`, `met_id`, `start`, `end`, `condition`, `editer`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-    var IV = [req.body.hos, req.body.date, req.body.sitizen, req.body.preflix, req.body.fname, req.body.lname, req.body.age, req.body.num, req.body.streed, req.body.district, req.body.subdistrict, req.body.zip, req.body.call, req.body.dateres, req.body.met, req.body.start, req.body.end, req.body.condition, req.body.editer]
+    var Isql = "INSERT INTO `form` (`hos_id`, `date`, `citizen`, `pre_id`, `fname`, `lname`, `age`, `house`, `street`, `dis_id`, `subdis`, `zipcode`, `call`, `dateres`, `met_id`, `start`, `end`, `condition`, `editer` ,`fm_time`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    var IV = [req.body.hos, req.body.date, req.body.sitizen, req.body.preflix, req.body.fname, req.body.lname, req.body.age, req.body.num, req.body.streed, req.body.district, req.body.subdistrict, req.body.zip, req.body.call, req.body.dateres, req.body.met, req.body.start, req.body.end, req.body.condition, req.body.editer ,req.body.time]
     conn.execute(Isql, IV, (err, results, fields) => {
         if (err) {
             res.json({ status: 'error', massage: err })
@@ -107,7 +107,7 @@ app.post('/fill', jsonParser, (req, res, next) => {
 })
 
 app.get("/form", jsonParser, (req, res, next) => {
-    conn.query("SELECT * FROM formcom ORDER BY form.fm_id DESC", (err, t1) => {
+    conn.query("SELECT * FROM formcom ORDER BY status ASC", (err, t1) => {
         t1 = t1.map(d => {
             if (d.date != null)
                 d.date = "วันที่ " + d.date.toISOString().split('T')[0] + " เวลา " + (d.date.toISOString().split('T')[1]).split(".")[0] + " น.";
@@ -121,7 +121,7 @@ app.get("/form", jsonParser, (req, res, next) => {
 
 app.get("/form/users/:us", jsonParser, (req, res, next) => {
     const us = req.params.us
-    conn.query("SELECT * FROM formcom WHERE hos_id = ? ORDER BY fm_id DESC", [us], (err, t1) => {
+    conn.query("SELECT * FROM formcom WHERE hos_id = ? ORDER BY status ASC", [us], (err, t1) => {
         t1 = t1.map(d => {
             if (d.date != null)
                 d.date = "วันที่ " + d.date.toISOString().split('T')[0] + " เวลา " + (d.date.toISOString().split('T')[1]).split(".")[0] + " น.";
@@ -254,7 +254,7 @@ app.get("/excal/:id", (req, res) => {
             ws.cell(i + 2, 10).string(t.house);
             ws.cell(i + 2, 11).string(t.street);
             ws.cell(i + 2, 12).string(t.subdis);
-            ws.cell(i + 2, 13).string(t.dis_name);
+            ws.cell(i + 2, 13).string(String(t.dis_name));
             ws.cell(i + 2, 14).string(t.zipcode);
             ws.cell(i + 2, 15).string(t.call);
             ws.cell(i + 2, 16).string(`${t.dateres.getDate()}/${t.dateres.getMonth()}/${t.dateres.getFullYear()}`);
