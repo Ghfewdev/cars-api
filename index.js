@@ -8,7 +8,7 @@ const jsonParser = bodyParser.json();
 const xl = require('excel4node');
 
 const app = express();
-const conn2 = mysql.createConnection({
+const conn2 = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASS,
@@ -96,8 +96,21 @@ app.get("/district2", jsonParser, (req, res, next) => {
 })
 
 app.post('/fill2', jsonParser, (req, res, next) => {
-    var Isql = "INSERT INTO `form` (`hos_id`, `date`, `citizen`, `pre_id`, `fname`, `lname`, `age`, `house`, `street`, `dis_id`, `subdis`, `zipcode`, `call`, `dateres`, `met_id`, `start`, `end`, `condition`, `editer` ,`fm_time`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-    var IV = [req.body.hos, req.body.date, req.body.sitizen, req.body.preflix, req.body.fname, req.body.lname, req.body.age, req.body.num, req.body.streed, req.body.district, req.body.subdistrict, req.body.zip, req.body.call, req.body.dateres, req.body.met, req.body.start, req.body.end, req.body.condition, req.body.editer, req.body.time]
+    var Isql = "INSERT INTO `form` (`hos_id`, `date`, `citizen`, `pre_id`, `fname`, `lname`, `age`, `house`, `street`, `dis_id`, `district01`, `province`, `subdis`, `zipcode`, `call`, `dateres`, `met_id`, `start`, `end`, `condition`, `editer` ,`fm_time`, `fm_ac`, `ac_detail`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    var IV = [req.body.hos, req.body.date, req.body.sitizen, req.body.preflix, req.body.fname, req.body.lname, req.body.age, req.body.num, req.body.streed, req.body.district, req.body.disv1, req.body.province, req.body.subdistrict, req.body.zip, req.body.call, req.body.dateres, req.body.met, req.body.start, req.body.end, req.body.condition, req.body.editer, req.body.time, req.body.ac, req.body.acd]
+    conn2.execute(Isql, IV, (err, results, fields) => {
+        if (err) {
+            res.json({ status: 'error', massage: err })
+            //return
+        } else
+            res.json({ status: 'ok' })
+    })
+})
+
+app.put('/edit/:id', jsonParser, (req, res, next) => {
+    const id = req.params.id
+    var Isql = "UPDATE `form` SET `date` = ?, `citizen` = ?, `pre_id` = ?, `fname` = ?, `lname` = ?, `age` = ?, `house` = ?, `street` = ?, `district01` = ?, `province` = ?, `subdis` = ?, `zipcode` = ?, `call` = ?, `dateres` = ?, `met_id` = ?, `start` = ?, `end` = ?, `condition` = ?, `editer` = ? WHERE `fm_id` = ?"
+    var IV = [req.body.date, req.body.sitizen, req.body.preflix, req.body.fname, req.body.lname, req.body.age, req.body.num, req.body.streed, req.body.disv1, req.body.province, req.body.subdistrict, req.body.zip, req.body.call, req.body.dateres, req.body.met, req.body.start, req.body.end, req.body.condition, req.body.editer, id]
     conn2.execute(Isql, IV, (err, results, fields) => {
         if (err) {
             res.json({ status: 'error', massage: err })
@@ -108,7 +121,7 @@ app.post('/fill2', jsonParser, (req, res, next) => {
 })
 
 app.get("/form2", jsonParser, (req, res, next) => {
-    conn2.query("SELECT * FROM formcom ORDER BY status ASC, dateres ASC", (err, t1) => {
+    conn2.query("SELECT * FROM formcom WHERE fm_ac = 1 ORDER BY status ASC, dateres ASC", (err, t1) => {
         t1 = t1.map(d => {
             if (d.date != null)
                 d.date = "วันที่ " + d.date.toISOString().split('T')[0] + " เวลา " + (d.date.toISOString().split('T')[1]).split(".")[0] + " น.";
@@ -122,7 +135,7 @@ app.get("/form2", jsonParser, (req, res, next) => {
 
 app.get("/form2/users/:us", jsonParser, (req, res, next) => {
     const us = req.params.us
-    conn2.query("SELECT * FROM formcom WHERE hos_id = ? ORDER BY status ASC, dateres ASC", [us], (err, t1) => {
+    conn2.query("SELECT * FROM formcom WHERE hos_id = ? AND fm_ac = 1 ORDER BY status ASC, dateres ASC", [us], (err, t1) => {
         t1 = t1.map(d => {
             if (d.date != null)
                 d.date = "วันที่ " + d.date.toISOString().split('T')[0] + " เวลา " + (d.date.toISOString().split('T')[1]).split(".")[0] + " น.";
@@ -142,8 +155,8 @@ app.get("/form2/:id", jsonParser, (req, res, next) => {
 })
 
 app.post('/status2', jsonParser, (req, res, next) => {
-    var Isql = "INSERT INTO `carsmanage` (`us_id`, `fm_id`, `cm_status`, `cm_date`, `des`) VALUES (?, ?, ?, ?, ?)"
-    var IV = [req.body.us_id, req.body.fm_id, req.body.cm_status, req.body.cm_date, req.body.des]
+    var Isql = "INSERT INTO `carsmanage` (`us_id`, `fm_id`, `distance`, `c_start`, `c_end`, `cm_status`, `cm_date`, `des`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    var IV = [req.body.us_id, req.body.fm_id, req.body.distance, req.body.cstart, req.body.cend, req.body.cm_status, req.body.cm_date, req.body.des]
     conn2.execute(Isql, IV, (err, results, fields) => {
         if (err) {
             res.json({ status: 'error', massage: err })
@@ -200,42 +213,47 @@ app.get("/excal2/:id", (req, res) => {
             ws.cell(1, 11).string("ถนน");
             ws.cell(1, 12).string("แขวง");
             ws.cell(1, 13).string("เขต");
-            ws.cell(1, 14).string("รหัสไปรษณี");
-            ws.cell(1, 15).string("เบอร์โทรศัพท์");
-            ws.cell(1, 16).string("วันที่ขอรถ");
-            ws.cell(1, 17).string("เวลาที่ขอรถ");
-            ws.cell(1, 18).string("วิธีการ");
-            ws.cell(1, 19).string("สถานที่ต้นทาง");
-            ws.cell(1, 20).string("เลขที่ต้นทาง");
-            ws.cell(1, 21).string("ถนนต้นทาง");
-            ws.cell(1, 22).string("แขวงต้นทาง");
-            ws.cell(1, 23).string("เขตต้นทาง");
-            ws.cell(1, 24).string("รหัสไปรษณีต้นทาง");
-            ws.cell(1, 25).string("สถานที่ปลายทาง");
-            ws.cell(1, 26).string("เลขที่ปลายทาง");
-            ws.cell(1, 27).string("ถนนปลายทาง");
-            ws.cell(1, 28).string("แขวงปลายทาง");
-            ws.cell(1, 29).string("เขตปลายทาง");
-            ws.cell(1, 30).string("รหัสไปรษณีปลายทาง");
-            ws.cell(1, 31).string("ผู้สูงอายุ");
-            ws.cell(1, 32).string("ADL 5-12");
-            ws.cell(1, 33).string("มีปัญหาด้านการเคลื่อนไหว");
-            ws.cell(1, 34).string("มีนัดรักษาต่อเนื่องกับโรงพยาบาล");
-            ws.cell(1, 35).string("มีปัญหาด้านเศรษฐานะ");
-            ws.cell(1, 36).string("อื่น ๆ ระบุ");
-            ws.cell(1, 37).string("คนพิการ");
-            ws.cell(1, 38).string("การเห็น");
-            ws.cell(1, 39).string("การได้ยินหรือสื่อความหมาย");
-            ws.cell(1, 40).string("การเคลื่อนไหวหรือทางร่างกาย");
-            ws.cell(1, 41).string("จิตใจหรือพฤติกรรม");
-            ws.cell(1, 42).string("สติปัญญา");
-            ws.cell(1, 43).string("การเรียนรู้");
-            ws.cell(1, 44).string("ออทิสติก");
-            ws.cell(1, 45).string("ชื่อผู้บันทึก");
-            ws.cell(1, 46).string("สถานะ");
-            ws.cell(1, 47).string("วันส่งข้อมูล");
-            ws.cell(1, 48).string("เวลาส่งข้อมูล");
-            ws.cell(1, 49).string("หมายเหตุ");
+            ws.cell(1, 14).string("จังหวัด");
+            ws.cell(1, 15).string("รหัสไปรษณี");
+            ws.cell(1, 16).string("เบอร์โทรศัพท์");
+            ws.cell(1, 17).string("วันที่ขอรถ");
+            ws.cell(1, 18).string("เวลาที่ขอรถ");
+            ws.cell(1, 19).string("วิธีการ");
+            ws.cell(1, 20).string("สถานที่ต้นทาง");
+            ws.cell(1, 21).string("เลขที่ต้นทาง");
+            ws.cell(1, 22).string("ถนนต้นทาง");
+            ws.cell(1, 23).string("แขวงต้นทาง");
+            ws.cell(1, 24).string("เขตต้นทาง");
+            ws.cell(1, 25).string("จังหวัดต้นทาง");
+            ws.cell(1, 26).string("รหัสไปรษณีต้นทาง");
+            ws.cell(1, 27).string("สถานที่ปลายทาง");
+            ws.cell(1, 28).string("เลขที่ปลายทาง");
+            ws.cell(1, 29).string("ถนนปลายทาง");
+            ws.cell(1, 30).string("แขวงปลายทาง");
+            ws.cell(1, 31).string("เขตปลายทาง");
+            ws.cell(1, 32).string("จังหวัดปลายทาง");
+            ws.cell(1, 33).string("รหัสไปรษณีปลายทาง");
+            ws.cell(1, 34).string("ผู้สูงอายุ");
+            ws.cell(1, 35).string("ADL 5-12");
+            ws.cell(1, 36).string("มีปัญหาด้านการเคลื่อนไหว");
+            ws.cell(1, 37).string("มีนัดรักษาต่อเนื่องกับโรงพยาบาล");
+            ws.cell(1, 38).string("มีปัญหาด้านเศรษฐานะ");
+            ws.cell(1, 39).string("อื่น ๆ ระบุ");
+            ws.cell(1, 40).string("คนพิการ");
+            ws.cell(1, 41).string("การเห็น");
+            ws.cell(1, 42).string("การได้ยินหรือสื่อความหมาย");
+            ws.cell(1, 43).string("การเคลื่อนไหวหรือทางร่างกาย");
+            ws.cell(1, 44).string("จิตใจหรือพฤติกรรม");
+            ws.cell(1, 45).string("สติปัญญา");
+            ws.cell(1, 46).string("การเรียนรู้");
+            ws.cell(1, 47).string("ออทิสติก");
+            ws.cell(1, 48).string("ชื่อผู้บันทึก");
+            ws.cell(1, 49).string("สถานะ");
+            ws.cell(1, 50).string("วันส่งข้อมูล");
+            ws.cell(1, 51).string("เวลาส่งข้อมูล");
+            ws.cell(1, 52).string("หมายเหตุ");
+            ws.cell(1, 53).string("สถานะขอรถ");
+            ws.cell(1, 54).string("สรุปผล");
 
             t1.map((t, i) => {
 
@@ -290,43 +308,48 @@ app.get("/excal2/:id", (req, res) => {
                 ws.cell(i + 2, 10).string(t.house);
                 ws.cell(i + 2, 11).string(t.street);
                 ws.cell(i + 2, 12).string(t.subdis);
-                ws.cell(i + 2, 13).string(String(t.dis_name));
-                ws.cell(i + 2, 14).string(t.zipcode);
-                ws.cell(i + 2, 15).string(t.call);
-                ws.cell(i + 2, 16).string(`${t.dateres.getDate()}/${t.dateres.getMonth() + 1}/${t.dateres.getFullYear()}`);
-                ws.cell(i + 2, 17).string(`${t.dateres.getHours()}:${t.dateres.getMinutes()}:${t.dateres.getSeconds()}`);
-                ws.cell(i + 2, 18).string(t.met_name);
-                ws.cell(i + 2, 19).string(start[0]);
-                ws.cell(i + 2, 20).string(start[1]);
-                ws.cell(i + 2, 21).string(start[2]);
-                ws.cell(i + 2, 22).string(start[3]);
-                ws.cell(i + 2, 23).string(start[4]);
-                ws.cell(i + 2, 24).string(start[6]);
-                ws.cell(i + 2, 25).string(end[0]);
-                ws.cell(i + 2, 26).string(end[1]);
-                ws.cell(i + 2, 27).string(end[2]);
-                ws.cell(i + 2, 28).string(end[3]);
-                ws.cell(i + 2, 29).string(end[4]);
-                ws.cell(i + 2, 30).string(end[7]);
-                ws.cell(i + 2, 31).number(condition[0]);
-                ws.cell(i + 2, 32).number(condition[1]);
-                ws.cell(i + 2, 33).number(condition[2]);
-                ws.cell(i + 2, 34).number(condition[3]);
-                ws.cell(i + 2, 35).number(condition[4]);
-                ws.cell(i + 2, 36).number(condition[5]);
-                ws.cell(i + 2, 37).number(condition[6]);
-                ws.cell(i + 2, 38).number(condition[7]);
-                ws.cell(i + 2, 39).number(condition[8]);
-                ws.cell(i + 2, 40).number(condition[9]);
-                ws.cell(i + 2, 41).number(condition[10]);
-                ws.cell(i + 2, 42).number(condition[11]);
-                ws.cell(i + 2, 43).number(condition[12]);
-                ws.cell(i + 2, 44).number(condition[13]);
-                ws.cell(i + 2, 45).string(t.editer);
-                ws.cell(i + 2, 46).string(String(t.status));
-                ws.cell(i + 2, 47).string(date);
-                ws.cell(i + 2, 48).string(time);
-                ws.cell(i + 2, 49).string(t.des);
+                ws.cell(i + 2, 13).string(t.district01);
+                ws.cell(i + 2, 14).string(t.province);
+                ws.cell(i + 2, 15).string(t.zipcode);
+                ws.cell(i + 2, 16).string(t.call);
+                ws.cell(i + 2, 17).string(`${t.dateres.getDate()}/${t.dateres.getMonth() + 1}/${t.dateres.getFullYear()}`);
+                ws.cell(i + 2, 18).string(`${t.dateres.getHours()}:${t.dateres.getMinutes()}:${t.dateres.getSeconds()}`);
+                ws.cell(i + 2, 19).string(t.met_name);
+                ws.cell(i + 2, 20).string(start[0]);
+                ws.cell(i + 2, 21).string(start[1]);
+                ws.cell(i + 2, 22).string(start[2]);
+                ws.cell(i + 2, 23).string(start[3]);
+                ws.cell(i + 2, 24).string(start[4]);
+                ws.cell(i + 2, 25).string(start[5]);
+                ws.cell(i + 2, 26).string(start[6]);
+                ws.cell(i + 2, 27).string(end[0]);
+                ws.cell(i + 2, 28).string(end[1]);
+                ws.cell(i + 2, 29).string(end[2]);
+                ws.cell(i + 2, 30).string(end[3]);
+                ws.cell(i + 2, 31).string(end[4]);
+                ws.cell(i + 2, 32).string(end[5]);
+                ws.cell(i + 2, 33).string(end[7]);
+                ws.cell(i + 2, 34).number(condition[0]);
+                ws.cell(i + 2, 35).number(condition[1]);
+                ws.cell(i + 2, 36).number(condition[2]);
+                ws.cell(i + 2, 37).number(condition[3]);
+                ws.cell(i + 2, 38).number(condition[4]);
+                ws.cell(i + 2, 39).number(condition[5]);
+                ws.cell(i + 2, 40).number(condition[6]);
+                ws.cell(i + 2, 41).number(condition[7]);
+                ws.cell(i + 2, 42).number(condition[8]);
+                ws.cell(i + 2, 43).number(condition[9]);
+                ws.cell(i + 2, 44).number(condition[10]);
+                ws.cell(i + 2, 45).number(condition[11]);
+                ws.cell(i + 2, 46).number(condition[12]);
+                ws.cell(i + 2, 47).number(condition[13]);
+                ws.cell(i + 2, 48).string(t.editer);
+                ws.cell(i + 2, 49).string(String(t.status));
+                ws.cell(i + 2, 50).string(date);
+                ws.cell(i + 2, 51).string(time);
+                ws.cell(i + 2, 52).string(t.des);
+                ws.cell(i + 2, 53).number(t.fm_ac);
+                ws.cell(i + 2, 54).string(t.ac_detail);
 
             }
             )
@@ -337,7 +360,7 @@ app.get("/excal2/:id", (req, res) => {
 
 })
 
-const port = process.env.PORT || 3333
+const port = process.env.PORT || 3001
 app.listen(port, () => {
     console.log("API Start on port: " + port)
 })
