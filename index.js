@@ -109,8 +109,8 @@ app.post('/fill2', jsonParser, (req, res, next) => {
 
 app.put('/edit/:id', jsonParser, (req, res, next) => {
     const id = req.params.id
-    var Isql = "UPDATE `form` SET `date` = ?, `citizen` = ?, `pre_id` = ?, `fname` = ?, `lname` = ?, `age` = ?, `house` = ?, `street` = ?, `district01` = ?, `province` = ?, `subdis` = ?, `zipcode` = ?, `call` = ?, `dateres` = ?, `met_id` = ?, `start` = ?, `end` = ?, `condition` = ?, `editer` = ? WHERE `fm_id` = ?"
-    var IV = [req.body.date, req.body.sitizen, req.body.preflix, req.body.fname, req.body.lname, req.body.age, req.body.num, req.body.streed, req.body.disv1, req.body.province, req.body.subdistrict, req.body.zip, req.body.call, req.body.dateres, req.body.met, req.body.start, req.body.end, req.body.condition, req.body.editer, id]
+    var Isql = "UPDATE `form` SET `date` = ?, `citizen` = ?, `fname` = ?, `lname` = ?, `age` = ?, `house` = ?, `street` = ?, `district01` = ?, `province` = ?, `subdis` = ?, `zipcode` = ?, `call` = ?, `dateres` = ?, `editer` = ? WHERE `fm_id` = ?"
+    var IV = [req.body.date, req.body.sitizen, req.body.fname, req.body.lname, req.body.age, req.body.num, req.body.streed, req.body.disv1, req.body.province, req.body.subdistrict, req.body.zip, req.body.call, req.body.dateres, req.body.editer, id]
     conn2.execute(Isql, IV, (err, results, fields) => {
         if (err) {
             res.json({ status: 'error', massage: err })
@@ -119,6 +119,21 @@ app.put('/edit/:id', jsonParser, (req, res, next) => {
             res.json({ status: 'ok' })
     })
 })
+
+// app.put('/edit/:id', jsonParser, (req, res, next) => {
+//     const id = req.params.id
+//     var Isql = "UPDATE `form` SET `date` = ?, `citizen` = ?, `pre_id` = ?, `fname` = ?, `lname` = ?, `age` = ?, `house` = ?, `street` = ?, `district01` = ?, `province` = ?, `subdis` = ?, `zipcode` = ?, `call` = ?, `dateres` = ?, `met_id` = ?, `start` = ?, `end` = ?, `condition` = ?, `editer` = ? WHERE `fm_id` = ?"
+//     var IV = [req.body.date, req.body.sitizen, req.body.preflix, req.body.fname, req.body.lname, req.body.age, req.body.num, req.body.streed, req.body.disv1, req.body.province, req.body.subdistrict, req.body.zip, req.body.call, req.body.dateres, req.body.met, req.body.start, req.body.end, req.body.condition, req.body.editer, id]
+//     conn2.execute(Isql, IV, (err, results, fields) => {
+//         if (err) {
+//             res.json({ status: 'error', massage: err })
+//             //return
+//         } else
+//             res.json({ status: 'ok' })
+//     })
+// })
+
+
 
 app.get("/form2", jsonParser, (req, res, next) => {
     conn2.query("SELECT * FROM formcom WHERE fm_ac = 1 ORDER BY status ASC, dateres ASC", (err, t1) => {
@@ -168,10 +183,8 @@ app.post('/status2', jsonParser, (req, res, next) => {
 
 app.put("/statu2/edit/:id", jsonParser, (req, res, next) => {
     const id = req.params.id
-    const d = new Date()
-    var t = d.getFullYear() + "/" + d.getMonth() + "/" + d.getDate() + " " + d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds()
-    const sql = "UPDATE `carsmanage` SET `cm_status` = '0', `cm_date` = ?, `des` = '?' WHERE `carsmanage`.`cm_id` = ?";
-    conn2.execute(sql, [t, req.body.des, id], (err, ev, fields) => {
+    const sql = "UPDATE `carsmanage` SET distance = ?, c_start = ?, c_end = ? WHERE `carsmanage`.`cm_id` = ?";
+    conn2.execute(sql, [req.body.dis, req.body.cs, req.body.ce, id], (err, ev, fields) => {
         if (err) {
             res.json({ status: "erorr", massage: err });
             //return;
@@ -254,6 +267,9 @@ app.get("/excal2/:id", (req, res) => {
             ws.cell(1, 52).string("หมายเหตุ");
             ws.cell(1, 53).string("สถานะขอรถ");
             ws.cell(1, 54).string("สรุปผล");
+            ws.cell(1, 55).string("ระยะทาง(กม.)");
+            ws.cell(1, 56).string("เวลาไป");
+            ws.cell(1, 57).string("เวลากลับ");
 
             t1.map((t, i) => {
 
@@ -294,6 +310,9 @@ app.get("/excal2/:id", (req, res) => {
                 else {
                     date = `${t.fm_time.getDate()}/${t.fm_time.getMonth() + 1}/${t.fm_time.getFullYear()}`
                     time = `${t.fm_time.getHours()}:${t.fm_time.getMinutes()}:${t.fm_time.getSeconds()}`
+                }
+                if(t.distance === null) {
+                    t.distance = 0
                 }
 
                 ws.cell(i + 2, 1).number(t.fm_id);
@@ -350,7 +369,9 @@ app.get("/excal2/:id", (req, res) => {
                 ws.cell(i + 2, 52).string(t.des);
                 ws.cell(i + 2, 53).number(t.fm_ac);
                 ws.cell(i + 2, 54).string(t.ac_detail);
-
+                ws.cell(i + 2, 55).number(t.distance);
+                ws.cell(i + 2, 56).string(t.c_start);
+                ws.cell(i + 2, 57).string(t.c_end);
             }
             )
             wb.write('ExcelFile.xlsx', res);
