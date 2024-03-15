@@ -311,7 +311,7 @@ app.get("/excal2/:id", (req, res) => {
                     date = `${t.fm_time.getDate()}/${t.fm_time.getMonth() + 1}/${t.fm_time.getFullYear()}`
                     time = `${t.fm_time.getHours()}:${t.fm_time.getMinutes()}:${t.fm_time.getSeconds()}`
                 }
-                if(t.distance === null) {
+                if (t.distance === null) {
                     t.distance = 0
                 }
 
@@ -380,6 +380,365 @@ app.get("/excal2/:id", (req, res) => {
     )
 
 })
+
+function formatDate(inputDate) {
+    const date = new Date(inputDate);
+
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+
+    const formattedDate = `${day.toString().padStart(2, '0')}-${month.toString().padStart(2, '0')}-${year}`;
+
+    return formattedDate;
+}
+
+//table qury
+app.get("/report", (req, res, next) => {
+    const hospital = parseInt(req.query.hospital);
+    const status = req.query.status;
+    const between1 = req.query.between1;
+    const between2 = req.query.between2
+    const page = parseInt(req.query.page);
+    const per_page = parseInt(req.query.per_page);
+    const sort_column = req.query.sort_column;
+    const sort_direction = req.query.sort_direction;
+    const search = req.query.search;
+
+    const start_idx = (page - 1) * per_page
+
+    var params = [];
+    var params2 = [];
+    var sql = "SELECT * FROM formcom WHERE fm_ac = 1"
+    var sql2 = "SELECT COUNT(fm_id) as total FROM formcom WHERE fm_ac = 1"
+    if (hospital && hospital !== 14) {
+        sql += " AND hos_id = ?"
+        sql2 += " AND hos_id = ?"
+        params.push(hospital)
+        params2.push(hospital)
+    }
+    if (status) {
+        if (status === "null" || status === "NULL") {
+            sql += " AND status is null"
+            sql2 += " AND status is null"
+        } else {
+            sql += " AND status = ?"
+            sql2 += " AND status = ?"
+            params.push(status)
+            params2.push(status)
+        }
+    }
+    //  else if (status) {
+    //     if (status === "null" || status === "NULL") {
+    //         sql += " WHERE status is null"
+    //     } else {
+    //         sql += " WHERE status = ?"
+    //         params.push(status)
+    //     }
+    // }
+    if (between1 || between2) {
+        if (between1 && between2) {
+            sql += " AND STR_TO_DATE(date,'%Y-%m-%d') >= ? AND STR_TO_DATE(date,'%Y-%m-%d') <= ?"
+            sql2 += " AND STR_TO_DATE(date,'%Y-%m-%d') >= ? AND STR_TO_DATE(date,'%Y-%m-%d') <= ?"
+            params.push(between1)
+            params.push(between2)
+            params2.push(between1)
+            params2.push(between2)
+        } else if (between1) {
+            sql += " AND STR_TO_DATE(date,'%Y-%m-%d') >= ?"
+            sql2 += " AND STR_TO_DATE(date,'%Y-%m-%d') >= ?"
+            params.push(between1)
+            params2.push(between1)
+
+        } else if (between2) {
+            sql += " AND STR_TO_DATE(date,'%Y-%m-%d') <= ?"
+            sql2 += " AND STR_TO_DATE(date,'%Y-%m-%d') <= ?"
+            params.push(between2)
+            params2.push(between2)
+        }
+    }
+    //  else if (!hospital && !status) {
+    //     if (between1 && between2) {
+    //         sql += " WHERE dateres >= ? AND dateres <= ?"
+    //         params.push(between1)
+    //         params.push(between2)
+    //     } else if (between1) {
+    //         sql += " WHERE dateres >= ?"
+    //         params.push(between1)
+    //     } else if (between2) {
+    //         sql += " WHERE dateres <= ?"
+    //         params.push(between2)
+    //     }
+    // }
+    if (search) {
+        sql += " AND (fname LIKE ? OR lname LIKE ?)"
+        sql2 += " AND (fname LIKE ? OR lname LIKE ?)"
+        params.push("%" + search + "%", "%" + search + "%")
+        params2.push("%" + search + "%", "%" + search + "%")
+    }
+    if (sort_column) {
+        sql += " ORDER BY " + sort_column + " " + sort_direction
+        sql2 += " ORDER BY " + sort_column + " " + sort_direction
+    } else {
+        sql += " ORDER BY status ASC, dateres ASC"
+        sql2 += " ORDER BY status ASC, dateres ASC"
+    }
+
+    sql += " LIMIT ?, ?"
+    params.push(start_idx)
+    params.push(per_page)
+
+    conn2.query(sql2, params, (req, ee, fields) => {
+        conn2.query(sql, params, (req, results, fields) => {
+            console.log(sql, params)
+            var total = ee[0]["total"]
+            var total_pages = Math.ceil(ee[0]["total"] / per_page)
+
+            // if (hospital || status || between1 || between2) {
+            //     total = results.length
+            //     total_pages = Math.ceil(results.length / per_page)
+            // }
+            results = results.map(d => {
+                if (d.date != null)
+                    d.date = formatDate(d.date.toISOString().split('T')[0]);
+                if (d.dateres != null)
+                    d.dateres = formatDate(d.dateres.toISOString().split('T')[0]) + " " + ((d.dateres.toISOString().split('T')[1]).split(".")[0]).split(":")[0] + ":" + ((d.dateres.toISOString().split('T')[1]).split(".")[0]).split(":")[1];
+                return d;
+            })
+            res.json({ page: page, per_page: per_page, total: total, total_pages: total_pages, data: results })
+        })
+    })
+
+})
+
+app.get("/excel2", (req, res) => {
+    const hospital = parseInt(req.query.hospital);
+    const status = req.query.status;
+    const between1 = req.query.between1;
+    const between2 = req.query.between2
+    const sort_column = req.query.sort_column;
+    const sort_direction = req.query.sort_direction;
+    const search = req.query.search;
+
+    var params = [];
+    var sql = "SELECT * FROM formcom WHERE fm_ac = 1"
+    if (hospital && hospital !== 14) {
+        sql += " AND hos_id = ?"
+        params.push(hospital)
+    }
+    if (status) {
+        if (status === "null" || status === "NULL") {
+            sql += " AND status is null"
+        } else {
+            sql += " AND status = ?"
+            params.push(status)
+        }
+    }
+    if (between1 || between2) {
+        if (between1 && between2) {
+            sql += " AND STR_TO_DATE(date,'%Y-%m-%d') >= ? AND STR_TO_DATE(date,'%Y-%m-%d') <= ?"
+            params.push(between1)
+            params.push(between2)
+        } else if (between1) {
+            sql += " AND STR_TO_DATE(date,'%Y-%m-%d') >= ?"
+            params.push(between1)
+
+        } else if (between2) {
+            sql += " AND STR_TO_DATE(date,'%Y-%m-%d') <= ?"
+            params.push(between2)
+        }
+    }
+
+    if (search) {
+        sql += " AND (fname LIKE ? OR lname LIKE ?)"
+        params.push("%" + search + "%", "%" + search + "%")
+    }
+    if (sort_column) {
+        sql += " ORDER BY " + sort_column + " " + sort_direction
+    } else {
+        sql += " ORDER BY status ASC, dateres ASC"
+    }
+
+
+    conn2.query(sql, params, (err, t1, fields) => {
+        console.log(sql, params)
+
+        if (err) {
+            res.json({ status: "erorr", massage: err });
+        }
+        else {
+
+            var wb = new xl.Workbook();
+            var ws = wb.addWorksheet('Sheet 1');
+
+            ws.cell(1, 1).string("ลำดับที่");
+            ws.cell(1, 2).string("โรงพยาบาล");
+            ws.cell(1, 3).string("วันที่จอง");
+            ws.cell(1, 4).string("เวลาที่จอง");
+            ws.cell(1, 5).string("เลขบัตรประชาชน");
+            ws.cell(1, 6).string("คำนำหน้าชื่อ");
+            ws.cell(1, 7).string("ชื่อ");
+            ws.cell(1, 8).string("นามสกุล");
+            ws.cell(1, 9).string("อายุ(ปี)");
+            ws.cell(1, 10).string("บ้านเลขที่");
+            ws.cell(1, 11).string("ถนน");
+            ws.cell(1, 12).string("แขวง");
+            ws.cell(1, 13).string("เขต");
+            ws.cell(1, 14).string("จังหวัด");
+            ws.cell(1, 15).string("รหัสไปรษณี");
+            ws.cell(1, 16).string("เบอร์โทรศัพท์");
+            ws.cell(1, 17).string("วันที่ขอรถ");
+            ws.cell(1, 18).string("เวลาที่ขอรถ");
+            ws.cell(1, 19).string("วิธีการ");
+            ws.cell(1, 20).string("สถานที่ต้นทาง");
+            ws.cell(1, 21).string("เลขที่ต้นทาง");
+            ws.cell(1, 22).string("ถนนต้นทาง");
+            ws.cell(1, 23).string("แขวงต้นทาง");
+            ws.cell(1, 24).string("เขตต้นทาง");
+            ws.cell(1, 25).string("จังหวัดต้นทาง");
+            ws.cell(1, 26).string("รหัสไปรษณีต้นทาง");
+            ws.cell(1, 27).string("สถานที่ปลายทาง");
+            ws.cell(1, 28).string("เลขที่ปลายทาง");
+            ws.cell(1, 29).string("ถนนปลายทาง");
+            ws.cell(1, 30).string("แขวงปลายทาง");
+            ws.cell(1, 31).string("เขตปลายทาง");
+            ws.cell(1, 32).string("จังหวัดปลายทาง");
+            ws.cell(1, 33).string("รหัสไปรษณีปลายทาง");
+            ws.cell(1, 34).string("ผู้สูงอายุ");
+            ws.cell(1, 35).string("ADL 5-12");
+            ws.cell(1, 36).string("มีปัญหาด้านการเคลื่อนไหว");
+            ws.cell(1, 37).string("มีนัดรักษาต่อเนื่องกับโรงพยาบาล");
+            ws.cell(1, 38).string("มีปัญหาด้านเศรษฐานะ");
+            ws.cell(1, 39).string("อื่น ๆ ระบุ");
+            ws.cell(1, 40).string("คนพิการ");
+            ws.cell(1, 41).string("การเห็น");
+            ws.cell(1, 42).string("การได้ยินหรือสื่อความหมาย");
+            ws.cell(1, 43).string("การเคลื่อนไหวหรือทางร่างกาย");
+            ws.cell(1, 44).string("จิตใจหรือพฤติกรรม");
+            ws.cell(1, 45).string("สติปัญญา");
+            ws.cell(1, 46).string("การเรียนรู้");
+            ws.cell(1, 47).string("ออทิสติก");
+            ws.cell(1, 48).string("ชื่อผู้บันทึก");
+            ws.cell(1, 49).string("สถานะ");
+            ws.cell(1, 50).string("วันส่งข้อมูล");
+            ws.cell(1, 51).string("เวลาส่งข้อมูล");
+            ws.cell(1, 52).string("หมายเหตุ");
+            ws.cell(1, 53).string("สถานะขอรถ");
+            ws.cell(1, 54).string("สรุปผล");
+            ws.cell(1, 55).string("ระยะทาง(กม.)");
+            ws.cell(1, 56).string("เวลาไป");
+            ws.cell(1, 57).string("เวลากลับ");
+
+            t1.map((t, i) => {
+
+                var start
+                var end
+                var condition
+                var condn
+                var time
+                var date
+
+                if (t.start.split(" "))
+                    start = t.start.split(" ")
+                else
+                    start = t.start
+
+                if (t.end.split(" "))
+                    end = t.end.split(" ")
+                else
+                    end = t.end
+
+                if (t.condition.split(", ")) {
+                    condition = t.condition.split(", ")
+                    for (var j = 0; j <= 13; j++) {
+                        if (condition[j] === "-")
+                            condition[j] = 0
+                        else
+                            condition[j] = 1
+                    }
+                }
+                else {
+                    condition = t.condition
+                }
+
+                if (t.fm_time === null) {
+                    date = null
+                    time = null
+                }
+                else {
+                    date = `${t.fm_time.getDate()}/${t.fm_time.getMonth() + 1}/${t.fm_time.getFullYear()}`
+                    time = `${t.fm_time.getHours()}:${t.fm_time.getMinutes()}:${t.fm_time.getSeconds()}`
+                }
+                if (t.distance === null) {
+                    t.distance = 0
+                }
+
+                ws.cell(i + 2, 1).number(t.fm_id);
+                ws.cell(i + 2, 2).string(t.hos_name);
+                ws.cell(i + 2, 3).string(`${t.date.getDate()}/${t.date.getMonth() + 1}/${t.date.getFullYear()}`);
+                ws.cell(i + 2, 4).string(`${t.date.getHours()}:${t.date.getMinutes()}:${t.date.getSeconds()}`);
+                ws.cell(i + 2, 5).string(t.citizen);
+                ws.cell(i + 2, 6).string(t.pre_name);
+                ws.cell(i + 2, 7).string(t.fname);
+                ws.cell(i + 2, 8).string(t.lname);
+                ws.cell(i + 2, 9).number(t.age);
+                ws.cell(i + 2, 10).string(t.house);
+                ws.cell(i + 2, 11).string(t.street);
+                ws.cell(i + 2, 12).string(t.subdis);
+                ws.cell(i + 2, 13).string(t.district01);
+                ws.cell(i + 2, 14).string(t.province);
+                ws.cell(i + 2, 15).string(t.zipcode);
+                ws.cell(i + 2, 16).string(t.call);
+                ws.cell(i + 2, 17).string(`${t.dateres.getDate()}/${t.dateres.getMonth() + 1}/${t.dateres.getFullYear()}`);
+                ws.cell(i + 2, 18).string(`${t.dateres.getHours()}:${t.dateres.getMinutes()}:${t.dateres.getSeconds()}`);
+                ws.cell(i + 2, 19).string(t.met_name);
+                ws.cell(i + 2, 20).string(start[0]);
+                ws.cell(i + 2, 21).string(start[1]);
+                ws.cell(i + 2, 22).string(start[2]);
+                ws.cell(i + 2, 23).string(start[3]);
+                ws.cell(i + 2, 24).string(start[4]);
+                ws.cell(i + 2, 25).string(start[5]);
+                ws.cell(i + 2, 26).string(start[6]);
+                ws.cell(i + 2, 27).string(end[0]);
+                ws.cell(i + 2, 28).string(end[1]);
+                ws.cell(i + 2, 29).string(end[2]);
+                ws.cell(i + 2, 30).string(end[3]);
+                ws.cell(i + 2, 31).string(end[4]);
+                ws.cell(i + 2, 32).string(end[5]);
+                ws.cell(i + 2, 33).string(end[7]);
+                ws.cell(i + 2, 34).number(condition[0]);
+                ws.cell(i + 2, 35).number(condition[1]);
+                ws.cell(i + 2, 36).number(condition[2]);
+                ws.cell(i + 2, 37).number(condition[3]);
+                ws.cell(i + 2, 38).number(condition[4]);
+                ws.cell(i + 2, 39).number(condition[5]);
+                ws.cell(i + 2, 40).number(condition[6]);
+                ws.cell(i + 2, 41).number(condition[7]);
+                ws.cell(i + 2, 42).number(condition[8]);
+                ws.cell(i + 2, 43).number(condition[9]);
+                ws.cell(i + 2, 44).number(condition[10]);
+                ws.cell(i + 2, 45).number(condition[11]);
+                ws.cell(i + 2, 46).number(condition[12]);
+                ws.cell(i + 2, 47).number(condition[13]);
+                ws.cell(i + 2, 48).string(t.editer);
+                ws.cell(i + 2, 49).string(String(t.status));
+                ws.cell(i + 2, 50).string(date);
+                ws.cell(i + 2, 51).string(time);
+                ws.cell(i + 2, 52).string(t.des);
+                ws.cell(i + 2, 53).number(t.fm_ac);
+                ws.cell(i + 2, 54).string(t.ac_detail);
+                ws.cell(i + 2, 55).number(t.distance);
+                ws.cell(i + 2, 56).string(t.c_start);
+                ws.cell(i + 2, 57).string(t.c_end);
+            }
+            )
+            wb.write('ExcelFile.xlsx', res);
+        }
+
+
+    })
+})
+
 
 const port = process.env.PORT || 3001
 app.listen(port, () => {
