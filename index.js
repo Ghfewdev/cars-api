@@ -823,7 +823,7 @@ app.get("/dash/4", jsonParser, (req, res) => {
     var hospital = req.query.hospital
     const status = req.query.status;
     const met = req.query.met;
-    var sql = "select count(fm_id) as total, count(case when hos_id = 1 then fm_id end) as h1, count(case when hos_id = 2 then fm_id end) as h2, count(case when hos_id = 3 then fm_id end) as h3, count(case when hos_id = 4 then fm_id end) as h4, count(case when hos_id = 5 then fm_id end) as h5, count(case when hos_id = 1 then fm_id end) as h1, count(case when hos_id = 1 then fm_id end) as h1, count(case when hos_id = 5 then fm_id end) as h5, count(case when hos_id = 6 then fm_id end) as h6, count(case when hos_id = 7 then fm_id end) as h7, count(case when hos_id = 8 then fm_id end) as h8, count(case when hos_id = 9 then fm_id end) as h9, count(case when hos_id = 10 then fm_id end) as h10, count(case when hos_id = 11 then fm_id end) as h11 from formcom"
+    var sql = "select count(fm_id) as total, count(case when hos_id = 1 then fm_id end) as h1, count(case when hos_id = 2 then fm_id end) as h2, count(case when hos_id = 3 then fm_id end) as h3, count(case when hos_id = 4 then fm_id end) as h4, count(case when hos_id = 5 then fm_id end) as h5, count(case when hos_id = 6 then fm_id end) as h6, count(case when hos_id = 7 then fm_id end) as h7, count(case when hos_id = 8 then fm_id end) as h8, count(case when hos_id = 9 then fm_id end) as h9, count(case when hos_id = 10 then fm_id end) as h10, count(case when hos_id = 11 then fm_id end) as h11 from formcom"
     var params = [];
     if (hospital) {
         sql += " WHERE hos_id = ?"
@@ -834,7 +834,7 @@ app.get("/dash/4", jsonParser, (req, res) => {
             sql += " AND status is null"
         } else {
             sql += " AND status = ?"
-            params.push(hospital)
+            params.push(status)
         }
     }
     else if (status) {
@@ -854,6 +854,7 @@ app.get("/dash/4", jsonParser, (req, res) => {
         params.push(met)
     }
     conn2.query(sql, params, (err, dash) => {
+        console.log(sql, params)
         res.send(dash)
     })
 })
