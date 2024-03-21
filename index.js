@@ -314,6 +314,9 @@ app.get("/excal2/:id", (req, res) => {
                 if (t.distance === null) {
                     t.distance = 0
                 }
+                if (t.met_name === "-") {
+                    t.met_name = "ไม่เข้าเงื่อนไขการขอใช้รถ"
+                }
 
                 ws.cell(i + 2, 1).number(t.fm_id);
                 ws.cell(i + 2, 2).string(t.hos_name);
@@ -672,6 +675,9 @@ app.get("/excel2", (req, res) => {
                 if (t.distance === null) {
                     t.distance = 0
                 }
+                if (t.met_name === "-") {
+                    t.met_name = "ไม่เข้าเงื่อนไขการขอใช้รถ"
+                }
 
                 ws.cell(i + 2, 1).number(t.fm_id);
                 ws.cell(i + 2, 2).string(t.hos_name);
@@ -738,6 +744,121 @@ app.get("/excel2", (req, res) => {
 
     })
 })
+
+//dashboard
+app.get("/dash/1", jsonParser, (req, res) => {
+    var hospital = req.query.hospital
+    var sql = 'select count(fm_id) as total, count(case when met_name = "ไป-กลับ" then fm_id end) as met1, count(case when met_name = "เที่ยวเดียว" then fm_id end) as met2, count(case when met_name = "ไม่เข้าเงื่อนไขการขอใช้รถ" then fm_id end) as met3 from formcom'
+    var params = []
+    if (hospital) {
+        sql += " WHERE hos_id = ?"
+        params.push(hospital)
+    }
+    conn2.query(sql, params, (err, dash) => {
+        //console.log(sql, params)
+        res.send(dash)
+    })
+})
+
+app.get("/dash/2", jsonParser, (req, res) => {
+    var hospital = req.query.hospital
+    var sql = 'select count(fm_id) as total, count(case when status = 1 then fm_id end) as met1, count(case when status = 0 then fm_id end) as met2, count(case when status is NULL then fm_id end) as met3 from formcom'
+    var params = []
+    if (hospital) {
+        sql += " WHERE hos_id = ?"
+        params.push(hospital)
+    }
+    conn2.query(sql, params, (err, dash) => {
+        //console.log(sql, params)
+        res.send(dash)
+    })
+})
+
+app.get("/dash/3", jsonParser, (req, res) => {
+    var hospital = req.query.hospital
+    const status = req.query.status;
+    const met = req.query.met;
+    //var sql = "select count(fm_id) as total, count(case when `condition` LIKE '%ผู้สูงอายุ%' then fm_id end) as type1, count(case when `condition` LIKE '%คนพิการ%' then fm_id end) as type2, count(case when `condition` LIKE '%ADL 5-12%' then fm_id end) as con1, count(case when `condition` LIKE '%มีปัญหาด้านการเคลื่อนไหว%' then fm_id end) as con2, count(case when `condition` LIKE '%มีนัดรักษาต่อเนื่องกับโรงพยาบาล%' then fm_id end) as con3, count(case when `condition` LIKE '%มีปัญหาด้านเศรษฐานะ%' then fm_id end) as con4, count(case when `condition` LIKE '%การเห็น%' then fm_id end) as dis1, count(case when `condition` LIKE '%การได้ยินหรือสื่อความหมาย%' then fm_id end) as dis2, count(case when `condition` LIKE '%การเคลื่อนไหวหรือทางร่างกาย%' then fm_id end) as dis3, count(case when `condition` LIKE '%จิตใจหรือพฤติกรรม%' then fm_id end) as dis4, count(case when `condition` LIKE '%สติปัญญา%' then fm_id end) as dis5, count(case when `condition` LIKE '%การเรียนรู้%' then fm_id end) as dis6, count(case when `condition` LIKE '%ออทิสติก%' then fm_id end) as dis7 from formcom"
+    var sql = "select count(fm_id) as total, count(case when `condition` LIKE '%ผู้สูงอายุ%' then fm_id end) as type1, count(case when `condition` LIKE '%คนพิการ%' then fm_id end) as type2, count(case when `condition` LIKE '%ADL 5-12%' then fm_id end) as con1, count(case when `condition` LIKE '%มีปัญหาด้านการเคลื่อนไหว%' then fm_id end) as con2, count(case when `condition` LIKE '%มีนัดรักษาต่อเนื่องกับโรงพยาบาล%' then fm_id end) as con3, count(case when `condition` LIKE '%มีปัญหาด้านเศรษฐานะ%' then fm_id end) as con4, count(case when `condition` LIKE '%การเห็น%' then fm_id end) as dis1, count(case when `condition` LIKE '%การได้ยินหรือสื่อความหมาย%' then fm_id end) as dis2, count(case when `condition` LIKE '%การเคลื่อนไหวหรือทางร่างกาย%' then fm_id end) as dis3, count(case when `condition` LIKE '%จิตใจหรือพฤติกรรม%' then fm_id end) as dis4, count(case when `condition` LIKE '%สติปัญญา%' then fm_id end) as dis5, count(case when `condition` LIKE '%การเรียนรู้%' then fm_id end) as dis6, count(case when `condition` LIKE '%ออทิสติก%' then fm_id end) as dis7, count(case when ac_detail LIKE '%แนะนำทำ Telemedicine%' then fm_id end) as out1, count(case when ac_detail LIKE '%ส่งต่อเยี่ยมบ้านโดยโรงพยาบาล%' then fm_id end) as out2, count(case when `condition` LIKE '%ส่งต่อเยี่ยมบ้านโดยศูนย์บริการสาธารณสุข%' then fm_id end) as out3 from formcom"
+    var params = [];
+    if (hospital) {
+        sql += " WHERE hos_id = ?"
+        params.push(hospital)
+        if (status) {
+            if (status === "NULL" || status === "null") {
+                sql += " AND status is null"
+            } else {
+                sql += " AND status = ?"
+                params.push(status)
+            }
+        }
+        if (met) {
+            sql += " AND met_name = ?"
+            params.push(met)
+        }
+    }
+    else {
+
+        if (status) {
+            if (status === "NULL" || status === "null") {
+                sql += " WHERE status is null"
+            } else {
+                sql += " WHERE status = ?"
+                params.push(status)
+            }
+        }
+        if (met) {
+            sql += " WHERE met_name = ?"
+            params.push(met)
+        }
+    }
+
+    conn2.query(sql, params, (err, dash) => {
+        //console.log(sql, params)
+        res.send(dash)
+    })
+})
+
+app.get("/dash/4", jsonParser, (req, res) => {
+    var hospital = req.query.hospital
+    const status = req.query.status;
+    const met = req.query.met;
+    var sql = "select count(fm_id) as total, count(case when hos_id = 1 then fm_id end) as h1, count(case when hos_id = 2 then fm_id end) as h2, count(case when hos_id = 3 then fm_id end) as h3, count(case when hos_id = 4 then fm_id end) as h4, count(case when hos_id = 5 then fm_id end) as h5, count(case when hos_id = 1 then fm_id end) as h1, count(case when hos_id = 1 then fm_id end) as h1, count(case when hos_id = 5 then fm_id end) as h5, count(case when hos_id = 6 then fm_id end) as h6, count(case when hos_id = 7 then fm_id end) as h7, count(case when hos_id = 8 then fm_id end) as h8, count(case when hos_id = 9 then fm_id end) as h9, count(case when hos_id = 10 then fm_id end) as h10, count(case when hos_id = 11 then fm_id end) as h11 from formcom"
+    var params = [];
+    if (hospital) {
+        sql += " WHERE hos_id = ?"
+        params.push(hospital)
+    }
+    if (status && hospital) {
+        if (status === "NULL" || status === "null") {
+            sql += " AND status is null"
+        } else {
+            sql += " AND status = ?"
+            params.push(hospital)
+        }
+    }
+    else if (status) {
+        if (status === "NULL" || status === "null") {
+            sql += " WHERE status is null"
+        } else {
+            sql += " WHERE status = ?"
+            params.push(status)
+        }
+    }
+    if (met && hospital) {
+        sql += " AND met_name = ?"
+        params.push(met)
+    }
+    else if (met) {
+        sql += " WHERE met_name = ?"
+        params.push(met)
+    }
+    conn2.query(sql, params, (err, dash) => {
+        res.send(dash)
+    })
+})
+
+
 
 
 const port = process.env.PORT || 3001
