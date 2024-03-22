@@ -317,6 +317,16 @@ app.get("/excal2/:id", (req, res) => {
                 if (t.met_name === "-") {
                     t.met_name = "ไม่เข้าเงื่อนไขการขอใช้รถ"
                 }
+                if (t.status === null) {
+                    t.status = "รอดำเนินการ"
+                }
+                if (t.status === 1) {
+                    t.status = "ดำเนินการสำเร็จ"
+                }
+                if (t.status === 0) {
+                    t.status = "ยกเลิก"
+                }
+                
 
                 ws.cell(i + 2, 1).number(t.fm_id);
                 ws.cell(i + 2, 2).string(t.hos_name);
@@ -677,6 +687,15 @@ app.get("/excel2", (req, res) => {
                 }
                 if (t.met_name === "-") {
                     t.met_name = "ไม่เข้าเงื่อนไขการขอใช้รถ"
+                }
+                if (t.status === null) {
+                    t.status = "รอดำเนินการ"
+                }
+                if (t.status === 1) {
+                    t.status = "ดำเนินการสำเร็จ"
+                }
+                if (t.status === 0) {
+                    t.status = "ยกเลิก"
                 }
 
                 ws.cell(i + 2, 1).number(t.fm_id);
