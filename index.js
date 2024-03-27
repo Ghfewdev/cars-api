@@ -503,7 +503,7 @@ app.get("/report", (req, res, next) => {
 
     conn2.query(sql2, params, (req, ee, fields) => {
         conn2.query(sql, params, (req, results, fields) => {
-            console.log(sql, params)
+            //console.log(sql, params)
             var total = ee[0]["total"]
             var total_pages = Math.ceil(ee[0]["total"] / per_page)
 
@@ -574,7 +574,7 @@ app.get("/excel2", (req, res) => {
 
 
     conn2.query(sql, params, (err, t1, fields) => {
-        console.log(sql, params)
+        //console.log(sql, params)
 
         if (err) {
             res.json({ status: "erorr", massage: err });
@@ -873,7 +873,7 @@ app.get("/dash/4", jsonParser, (req, res) => {
         params.push(met)
     }
     conn2.query(sql, params, (err, dash) => {
-        console.log(sql, params)
+        //console.log(sql, params)
         res.send(dash)
     })
 })
