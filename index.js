@@ -96,8 +96,8 @@ app.get("/district2", jsonParser, (req, res, next) => {
 })
 
 app.post('/fill2', jsonParser, (req, res, next) => {
-    var Isql = "INSERT INTO `form` (`hos_id`, `date`, `citizen`, `pre_id`, `fname`, `lname`, `age`, `house`, `street`, `dis_id`, `district01`, `province`, `subdis`, `zipcode`, `call`, `dateres`, `met_id`, `start`, `end`, `condition`, `editer` ,`fm_time`, `fm_ac`, `ac_detail`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-    var IV = [req.body.hos, req.body.date, req.body.sitizen, req.body.preflix, req.body.fname, req.body.lname, req.body.age, req.body.num, req.body.streed, req.body.district, req.body.disv1, req.body.province, req.body.subdistrict, req.body.zip, req.body.call, req.body.dateres, req.body.met, req.body.start, req.body.end, req.body.condition, req.body.editer, req.body.time, req.body.ac, req.body.acd]
+    var Isql = "INSERT INTO `form` (`hos_id`, `way`, `date`, `citizen`, `pre_id`, `fname`, `lname`, `age`, `house`, `street`, `dis_id`, `district01`, `province`, `subdis`, `zipcode`, `call`, `dateres`, `met_id`, `start`, `end`, `condition`, `editer` ,`fm_time`, `fm_ac`, `ac_detail`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    var IV = [req.body.hos, req.body.way, req.body.date, req.body.sitizen, req.body.preflix, req.body.fname, req.body.lname, req.body.age, req.body.num, req.body.streed, req.body.district, req.body.disv1, req.body.province, req.body.subdistrict, req.body.zip, req.body.call, req.body.dateres, req.body.met, req.body.start, req.body.end, req.body.condition, req.body.editer, req.body.time, req.body.ac, req.body.acd]
     conn2.execute(Isql, IV, (err, results, fields) => {
         if (err) {
             res.json({ status: 'error', massage: err })
@@ -270,6 +270,7 @@ app.get("/excal2/:id", (req, res) => {
             ws.cell(1, 55).string("ระยะทาง(กม.)");
             ws.cell(1, 56).string("เวลาไป");
             ws.cell(1, 57).string("เวลากลับ");
+            ws.cell(1, 58).string("ช่องทางเข้ารับบริการ");
 
             t1.map((t, i) => {
 
@@ -385,6 +386,7 @@ app.get("/excal2/:id", (req, res) => {
                 ws.cell(i + 2, 55).number(t.distance);
                 ws.cell(i + 2, 56).string(t.c_start);
                 ws.cell(i + 2, 57).string(t.c_end);
+                ws.cell(i + 2, 58).string(t.way);
             }
             )
             wb.write('ExcelFile.xlsx', res);
@@ -641,6 +643,7 @@ app.get("/excel2", (req, res) => {
             ws.cell(1, 55).string("ระยะทาง(กม.)");
             ws.cell(1, 56).string("เวลาไป");
             ws.cell(1, 57).string("เวลากลับ");
+            ws.cell(1, 58).string("ช่องทางเข้ารับบริการ");
 
             t1.map((t, i) => {
 
@@ -755,6 +758,7 @@ app.get("/excel2", (req, res) => {
                 ws.cell(i + 2, 55).number(t.distance);
                 ws.cell(i + 2, 56).string(t.c_start);
                 ws.cell(i + 2, 57).string(t.c_end);
+                ws.cell(i + 2, 58).string(t.way);
             }
             )
             wb.write('ExcelFile.xlsx', res);
@@ -877,8 +881,6 @@ app.get("/dash/4", jsonParser, (req, res) => {
         res.send(dash)
     })
 })
-
-
 
 
 const port = process.env.PORT || 3001
