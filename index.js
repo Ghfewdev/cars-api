@@ -271,15 +271,21 @@ app.get("/excal2/:id", (req, res) => {
             ws.cell(1, 56).string("เวลาไป");
             ws.cell(1, 57).string("เวลากลับ");
             ws.cell(1, 58).string("ช่องทางเข้ารับบริการ");
+            ws.cell(1, 59).string("เงื่อนไขระบุ");
+            ws.cell(1, 60).string("ไม่เข้าเงื่อนไขระบุ");
+            ws.cell(1, 61).string("ยกเลิกระบุ");
 
             t1.map((t, i) => {
 
                 var start
                 var end
                 var condition
-                var condn
+                var condn = "-"
+                var dispass = "-"
                 var time
                 var date
+                var deca = "-"
+                var des
 
                 if (t.start.split(" "))
                     start = t.start.split(" ")
@@ -296,8 +302,12 @@ app.get("/excal2/:id", (req, res) => {
                     for (var j = 0; j <= 13; j++) {
                         if (condition[j] === "-")
                             condition[j] = 0
-                        else
-                            condition[j] = 1
+                        else {
+                            if (j === 5) {
+                                condn = condition[j]
+                            }
+                               condition[j] = 1
+                        }
                     }
                 }
                 else {
@@ -315,9 +325,9 @@ app.get("/excal2/:id", (req, res) => {
                 if (t.distance === null) {
                     t.distance = 0
                 }
-                if (t.met_name === "-") {
-                    t.met_name = "ไม่เข้าเงื่อนไขการขอใช้รถ"
-                }
+                // if (t.met_name === "-") {
+                //     t.met_name = "ไม่เข้าเงื่อนไขการขอใช้รถ"
+                // }
                 if (t.status === null) {
                     t.status = "รอดำเนินการ"
                 }
@@ -327,8 +337,28 @@ app.get("/excal2/:id", (req, res) => {
                 if (t.status === 0) {
                     t.status = "ยกเลิก"
                 }
+                if(t.des === null) {
+                    des = ""
+                } else if(t.des === "ยกเลิกนัด รถไม่พร้อม") {
+                    des = "รถไม่พร้อม"
+                } else if(t.des === "ยกเลิกนัด รถไม่เพียงพอ") {
+                    des = "รถไม่เพียงพอ"
+                } else if(t.des === "ผู้ป่วยยกเลิกนัด") {
+                    des = "ผู้ป่วยยกเลิกนัด"
+                } else if(t.des === "") {
+                    des = ""
+                }
+                 else {
+                    deca = t.des
+                    des = "อื่นๆ"
+                }
+                if (t.ac_detail === "แนะนำทำ Telemedicine" || t.ac_detail === "ส่งต่อเยี่ยมบ้านโดยโรงพยาบาล" || t.ac_detail === "ส่งต่อเยี่ยมบ้านโดยศูนย์บริการสาธารณสุข" || t.ac_detail === "เข้าเงื่อนไขการขอใช้รถ") {
+                    t.ac_detail = t.ac_detail
+                 } else {
+                     dispass = t.ac_detail
+                     t.ac_detail = "อื่นๆ"
+                 }
                 
-
                 ws.cell(i + 2, 1).number(t.fm_id);
                 ws.cell(i + 2, 2).string(t.hos_name);
                 ws.cell(i + 2, 3).string(`${t.date.getDate()}/${t.date.getMonth() + 1}/${t.date.getFullYear()}`);
@@ -380,13 +410,16 @@ app.get("/excal2/:id", (req, res) => {
                 ws.cell(i + 2, 49).string(String(t.status));
                 ws.cell(i + 2, 50).string(date);
                 ws.cell(i + 2, 51).string(time);
-                ws.cell(i + 2, 52).string(t.des);
+                ws.cell(i + 2, 52).string(des);
                 ws.cell(i + 2, 53).number(t.fm_ac);
                 ws.cell(i + 2, 54).string(t.ac_detail);
                 ws.cell(i + 2, 55).number(t.distance);
                 ws.cell(i + 2, 56).string(t.c_start);
                 ws.cell(i + 2, 57).string(t.c_end);
                 ws.cell(i + 2, 58).string(t.way);
+                ws.cell(i + 2, 59).string(condn);
+                ws.cell(i + 2, 60).string(dispass);
+                ws.cell(i + 2, 61).string(deca);
             }
             )
             wb.write('ExcelFile.xlsx', res);
@@ -644,15 +677,21 @@ app.get("/excel2", (req, res) => {
             ws.cell(1, 56).string("เวลาไป");
             ws.cell(1, 57).string("เวลากลับ");
             ws.cell(1, 58).string("ช่องทางเข้ารับบริการ");
+            ws.cell(1, 59).string("เงื่อนไขระบุ");
+            ws.cell(1, 60).string("ไม่เข้าเงื่อนไขระบุ");
+            ws.cell(1, 61).string("ยกเลิกระบุ");
 
             t1.map((t, i) => {
 
                 var start
                 var end
                 var condition
-                var condn
+                var condn = "-"
+                var dispass = "-"
                 var time
                 var date
+                var deca = "-"
+                var des
 
                 if (t.start.split(" "))
                     start = t.start.split(" ")
@@ -669,8 +708,13 @@ app.get("/excel2", (req, res) => {
                     for (var j = 0; j <= 13; j++) {
                         if (condition[j] === "-")
                             condition[j] = 0
-                        else
-                            condition[j] = 1
+                        else {
+                            if (j === 5) {
+                                condn = condition[j]
+                            }
+                               condition[j] = 1 
+                        }
+                            
                     }
                 }
                 else {
@@ -688,9 +732,9 @@ app.get("/excel2", (req, res) => {
                 if (t.distance === null) {
                     t.distance = 0
                 }
-                if (t.met_name === "-") {
-                    t.met_name = "ไม่เข้าเงื่อนไขการขอใช้รถ"
-                }
+                // if (t.met_name === "-") {
+                //     t.met_name = "ไม่เข้าเงื่อนไขการขอใช้รถ"
+                // }
                 if (t.status === null) {
                     t.status = "รอดำเนินการ"
                 }
@@ -699,6 +743,21 @@ app.get("/excel2", (req, res) => {
                 }
                 if (t.status === 0) {
                     t.status = "ยกเลิก"
+                }
+                if(t.des === null) {
+                    des = ""
+                } else if(t.des === "ยกเลิกนัด รถไม่พร้อม") {
+                    des = "รถไม่พร้อม"
+                } else if(t.des === "ยกเลิกนัด รถไม่เพียงพอ") {
+                    des = "รถไม่เพียงพอ"
+                } else if(t.des === "ผู้ป่วยยกเลิกนัด") {
+                    des = "ผู้ป่วยยกเลิกนัด"
+                } else if(t.des === "") {
+                    des = ""
+                }
+                 else {
+                    deca = t.des
+                    des = "อื่นๆ"
                 }
 
                 ws.cell(i + 2, 1).number(t.fm_id);
@@ -752,13 +811,16 @@ app.get("/excel2", (req, res) => {
                 ws.cell(i + 2, 49).string(String(t.status));
                 ws.cell(i + 2, 50).string(date);
                 ws.cell(i + 2, 51).string(time);
-                ws.cell(i + 2, 52).string(t.des);
+                ws.cell(i + 2, 52).string(des);
                 ws.cell(i + 2, 53).number(t.fm_ac);
                 ws.cell(i + 2, 54).string(t.ac_detail);
                 ws.cell(i + 2, 55).number(t.distance);
                 ws.cell(i + 2, 56).string(t.c_start);
                 ws.cell(i + 2, 57).string(t.c_end);
                 ws.cell(i + 2, 58).string(t.way);
+                ws.cell(i + 2, 59).string(condn);
+                ws.cell(i + 2, 60).string(dispass);
+                ws.cell(i + 2, 61).string(deca);
             }
             )
             wb.write('ExcelFile.xlsx', res);
