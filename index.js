@@ -139,9 +139,9 @@ app.get("/form2", jsonParser, (req, res, next) => {
     conn2.query("SELECT * FROM formcom WHERE fm_ac = 1 ORDER BY status ASC, dateres ASC", (err, t1) => {
         t1 = t1.map(d => {
             if (d.date != null)
-                d.date = "วันที่ " + d.date.toISOString().split('T')[0] + " เวลา " + (d.date.toISOString().split('T')[1]).split(".")[0] + " น.";
+                d.date = "วันที่ " + formatDate(d.date.toISOString().split('T')[0]) + " เวลา " + (d.date.toISOString().split('T')[1]).split(".")[0] + " น.";
             if (d.dateres != null)
-                d.dateres = " วันที่ " + d.dateres.toISOString().split('T')[0] + " เวลา " + (d.dateres.toISOString().split('T')[1]).split(".")[0] + " น.";
+                d.dateres = " วันที่ " + formatDate(d.dateres.toISOString().split('T')[0]) + " เวลา " + (d.dateres.toISOString().split('T')[1]).split(".")[0] + " น.";
             return d;
         })
         res.send(t1)
@@ -153,9 +153,9 @@ app.get("/form2/users/:us", jsonParser, (req, res, next) => {
     conn2.query("SELECT * FROM formcom WHERE hos_id = ? AND fm_ac = 1 ORDER BY status ASC, dateres ASC", [us], (err, t1) => {
         t1 = t1.map(d => {
             if (d.date != null)
-                d.date = "วันที่ " + d.date.toISOString().split('T')[0] + " เวลา " + (d.date.toISOString().split('T')[1]).split(".")[0] + " น.";
+                d.date = "วันที่ " + formatDate(d.date.toISOString().split('T')[0]) + " เวลา " + (d.date.toISOString().split('T')[1]).split(".")[0] + " น.";
             if (d.dateres != null)
-                d.dateres = " วันที่ " + d.dateres.toISOString().split('T')[0] + " เวลา " + (d.dateres.toISOString().split('T')[1]).split(".")[0] + " น.";
+                d.dateres = " วันที่ " + formatDate(d.dateres.toISOString().split('T')[0]) + " เวลา " + (d.dateres.toISOString().split('T')[1]).split(".")[0] + " น.";
             return d;
         })
         res.send(t1)
@@ -165,6 +165,13 @@ app.get("/form2/users/:us", jsonParser, (req, res, next) => {
 app.get("/form2/:id", jsonParser, (req, res, next) => {
     const id = req.params.id
     conn2.query("SELECT * FROM formcom WHERE formcom.fm_id = ?", [id], (err, t1) => {
+        t1 = t1.map(d => {
+            if (d.date != null)
+                d.date = "วันที่ " + formatDate(d.date.toISOString().split('T')[0]) + " เวลา " + (d.date.toISOString().split('T')[1]).split(".")[0] + " น.";
+            if (d.dateres != null)
+                d.dateres = " วันที่ " + formatDate(d.dateres.toISOString().split('T')[0]) + " เวลา " + (d.dateres.toISOString().split('T')[1]).split(".")[0] + " น.";
+            return d;
+        })
         res.send(t1)
     })
 })
@@ -319,7 +326,7 @@ app.get("/excal2/:id", (req, res) => {
                     time = null
                 }
                 else {
-                    date = `${t.fm_time.getDate()}/${t.fm_time.getMonth() + 1}/${t.fm_time.getFullYear()}`
+                    date = `${t.fm_time.getDate()}/${t.fm_time.getMonth() + 1}/${t.fm_time.getFullYear()+543}`
                     time = `${t.fm_time.getHours()}:${t.fm_time.getMinutes()}:${t.fm_time.getSeconds()}`
                 }
                 if (t.distance === null) {
@@ -330,6 +337,9 @@ app.get("/excal2/:id", (req, res) => {
                 // }
                 if (t.status === null) {
                     t.status = "รอดำเนินการ"
+                    if(t.ac_detail !== "เข้าเงื่อนไขการขอใช้รถ"){
+                        t.status = "ไม่ได้ส่งรถให้บริการ"
+                    }
                 }
                 if (t.status === 1) {
                     t.status = "ดำเนินการสำเร็จ"
@@ -361,7 +371,7 @@ app.get("/excal2/:id", (req, res) => {
                 
                 ws.cell(i + 2, 1).number(t.fm_id);
                 ws.cell(i + 2, 2).string(t.hos_name);
-                ws.cell(i + 2, 3).string(`${t.date.getDate()}/${t.date.getMonth() + 1}/${t.date.getFullYear()}`);
+                ws.cell(i + 2, 3).string(`${t.date.getDate()}/${t.date.getMonth() + 1}/${t.date.getFullYear()+543}`);
                 ws.cell(i + 2, 4).string(`${t.date.getHours()}:${t.date.getMinutes()}:${t.date.getSeconds()}`);
                 ws.cell(i + 2, 5).string(t.citizen);
                 ws.cell(i + 2, 6).string(t.pre_name);
@@ -375,7 +385,7 @@ app.get("/excal2/:id", (req, res) => {
                 ws.cell(i + 2, 14).string(t.province);
                 ws.cell(i + 2, 15).string(t.zipcode);
                 ws.cell(i + 2, 16).string(t.call);
-                ws.cell(i + 2, 17).string(`${t.dateres.getDate()}/${t.dateres.getMonth() + 1}/${t.dateres.getFullYear()}`);
+                ws.cell(i + 2, 17).string(`${t.dateres.getDate()}/${t.dateres.getMonth() + 1}/${t.dateres.getFullYear()+543}`);
                 ws.cell(i + 2, 18).string(`${t.dateres.getHours()}:${t.dateres.getMinutes()}:${t.dateres.getSeconds()}`);
                 ws.cell(i + 2, 19).string(t.met_name);
                 ws.cell(i + 2, 20).string(start[0]);
@@ -436,7 +446,7 @@ function formatDate(inputDate) {
     const month = date.getMonth() + 1;
     const day = date.getDate();
 
-    const formattedDate = `${day.toString().padStart(2, '0')}-${month.toString().padStart(2, '0')}-${year}`;
+    const formattedDate = `${day.toString().padStart(2, '0')}-${month.toString().padStart(2, '0')}-${year+543}`;
 
     return formattedDate;
 }
@@ -726,8 +736,8 @@ app.get("/excel2", (req, res) => {
                     time = null
                 }
                 else {
-                    date = `${t.fm_time.getDate()}/${t.fm_time.getMonth() + 1}/${t.fm_time.getFullYear()}`
-                    time = `${t.fm_time.getHours()}:${t.fm_time.getMinutes()}:${t.fm_time.getSeconds()}`
+                    date = `${t.fm_time.getDate()}/${t.fm_time.getMonth() + 1}/${t.fm_time.getFullYear()+543}`
+                    time = `${t.fm_time.getHours()}:${t.fm_time.getMinutes()}:${t.fm_time.getSeconds()+543}`
                 }
                 if (t.distance === null) {
                     t.distance = 0
@@ -737,6 +747,9 @@ app.get("/excel2", (req, res) => {
                 // }
                 if (t.status === null) {
                     t.status = "รอดำเนินการ"
+                    if(t.ac_detail !== "เข้าเงื่อนไขการขอใช้รถ"){
+                        t.status = "ไม่ได้ส่งรถให้บริการ"
+                    }
                 }
                 if (t.status === 1) {
                     t.status = "ดำเนินการสำเร็จ"
@@ -762,7 +775,7 @@ app.get("/excel2", (req, res) => {
 
                 ws.cell(i + 2, 1).number(t.fm_id);
                 ws.cell(i + 2, 2).string(t.hos_name);
-                ws.cell(i + 2, 3).string(`${t.date.getDate()}/${t.date.getMonth() + 1}/${t.date.getFullYear()}`);
+                ws.cell(i + 2, 3).string(`${t.date.getDate()}/${t.date.getMonth() + 1}/${t.date.getFullYear()+543}`);
                 ws.cell(i + 2, 4).string(`${t.date.getHours()}:${t.date.getMinutes()}:${t.date.getSeconds()}`);
                 ws.cell(i + 2, 5).string(t.citizen);
                 ws.cell(i + 2, 6).string(t.pre_name);
@@ -776,7 +789,7 @@ app.get("/excel2", (req, res) => {
                 ws.cell(i + 2, 14).string(t.province);
                 ws.cell(i + 2, 15).string(t.zipcode);
                 ws.cell(i + 2, 16).string(t.call);
-                ws.cell(i + 2, 17).string(`${t.dateres.getDate()}/${t.dateres.getMonth() + 1}/${t.dateres.getFullYear()}`);
+                ws.cell(i + 2, 17).string(`${t.dateres.getDate()}/${t.dateres.getMonth() + 1}/${t.dateres.getFullYear()+543}`);
                 ws.cell(i + 2, 18).string(`${t.dateres.getHours()}:${t.dateres.getMinutes()}:${t.dateres.getSeconds()}`);
                 ws.cell(i + 2, 19).string(t.met_name);
                 ws.cell(i + 2, 20).string(start[0]);
