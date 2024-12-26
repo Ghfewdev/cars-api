@@ -177,8 +177,8 @@ app.get("/form2/:id", jsonParser, (req, res, next) => {
 })
 
 app.post('/status2', jsonParser, (req, res, next) => {
-    var Isql = "INSERT INTO `carsmanage` (`us_id`, `fm_id`, `distance`, `c_start`, `c_end`, `cm_status`, `cm_date`, `des`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-    var IV = [req.body.us_id, req.body.fm_id, req.body.distance, req.body.cstart, req.body.cend, req.body.cm_status, req.body.cm_date, req.body.des]
+    var Isql = "INSERT INTO `carsmanage` (`us_id`, `fm_id`, `distance`, `car_name`, `c_start`, `c_end`, `cm_status`, `cm_date`, `des`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    var IV = [req.body.us_id, req.body.fm_id, req.body.distance, req.body.carname, req.body.cstart, req.body.cend, req.body.cm_status, req.body.cm_date, req.body.des]
     conn2.execute(Isql, IV, (err, results, fields) => {
         if (err) {
             res.json({ status: 'error', massage: err })
@@ -191,7 +191,7 @@ app.post('/status2', jsonParser, (req, res, next) => {
 app.put("/statu2/edit/:id", jsonParser, (req, res, next) => {
     const id = req.params.id
     const sql = "UPDATE `carsmanage` SET distance = ?, c_start = ?, c_end = ? WHERE `carsmanage`.`cm_id` = ?";
-    conn2.execute(sql, [req.body.dis, req.body.cs, req.body.ce, id], (err, ev, fields) => {
+    conn2.execute(sql, [req.body.dis, req.body.carname, req.body.cs, req.body.ce, id], (err, ev, fields) => {
         if (err) {
             res.json({ status: "erorr", massage: err });
             //return;
@@ -281,6 +281,7 @@ app.get("/excal2/:id", (req, res) => {
             ws.cell(1, 59).string("สถานะ");
             ws.cell(1, 60).string("หมายเหตุยกเลิก");
             ws.cell(1, 61).string("ยกเลิกระบุ");
+            ws.cell(1, 62).string("ทะเบียนรถ");
             // ws.cell(1, 53).string("สถานะขอรถ");
 
             t1.map((t, i) => {
@@ -493,7 +494,7 @@ app.get("/excal2/:id", (req, res) => {
                 ws.cell(i + 2, 59).string(String(t.status));
                 ws.cell(i + 2, 60).string(des);
                 ws.cell(i + 2, 61).string(deca);
-
+                ws.cell(i + 2, 62).string(t.car_name);
                 // ws.cell(i + 2, 53).number(t.fm_ac);
             }
             )
@@ -755,6 +756,7 @@ app.get("/excel2", (req, res) => {
             ws.cell(1, 59).string("สถานะ");
             ws.cell(1, 60).string("หมายเหตุยกเลิก");
             ws.cell(1, 61).string("ยกเลิกระบุ");
+            ws.cell(1, 62).string("ทะเบียนรถ");
 
             t1.map((t, i) => {
 
@@ -901,6 +903,7 @@ app.get("/excel2", (req, res) => {
                 ws.cell(i + 2, 59).string(String(t.status));
                 ws.cell(i + 2, 60).string(des);
                 ws.cell(i + 2, 61).string(deca);
+                ws.cell(i + 2, 62).string(t.car_name);
             }
             )
             wb.write('ExcelFile.xlsx', res);
