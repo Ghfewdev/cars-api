@@ -19,6 +19,38 @@ const saltRounds = 10;
 const jwt = require('jsonwebtoken');
 const secect = 'abcdefg'
 
+const FIXED_TOKEN = "hosonly";
+
+const verifyToken = (req, res, next) => {
+    const authHeader = req.headers["authorization"];
+    
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ message: "Unauthorized: No token provided" });
+    }
+
+    const token = authHeader.split(" ")[1]; // ดึง token ออกจาก "Bearer <token>"
+
+    if (token !== FIXED_TOKEN) {
+        return res.status(403).json({ message: "Forbidden: Invalid token" });
+    }
+
+    next(); // ผ่านการตรวจสอบ ไปยัง route ถัดไป
+};
+
+function encode(text) {
+    if (text.length <= 6) return text; // ถ้ายาวไม่ถึง 6 ตัวไม่ต้องเข้ารหัส
+    const firstThree = text.slice(0, 3);
+    const lastThree = text.slice(-3);
+    const middleHidden = '*'.repeat(text.length - 6);
+    return firstThree + middleHidden + lastThree;
+}
+
+
+
+function decode(originalText, encodedText) {
+    return encodedText.includes('*') ? originalText : encodedText;
+}
+
 app.use(cors());
 app.use(express.json());
 
@@ -148,10 +180,44 @@ app.get("/form2", jsonParser, (req, res, next) => {
     })
 })
 
-app.get("/form2/users/:us", jsonParser, (req, res, next) => {
+app.get("/form2a", jsonParser, (req, res, next) => {
+    conn2.query("SELECT * FROM formcom ORDER BY status ASC, dateres ASC", (err, t1) => {
+        t1 = t1.map(d => {
+            if (d.date != null)
+                d.date = "วันที่ " + formatDate(d.date.toISOString().split('T')[0]) + " เวลา " + (d.date.toISOString().split('T')[1]).split(".")[0] + " น.";
+            if (d.dateres != null)
+                d.dateres = " วันที่ " + formatDate(d.dateres.toISOString().split('T')[0]) + " เวลา " + (d.dateres.toISOString().split('T')[1]).split(".")[0] + " น.";
+            return d;
+        })
+        res.send(t1)
+    })
+})
+
+app.get("/formq/:date1/:date2", jsonParser, (req, res, next) => {
+    const date1 = req.params.date1
+    const date2 = req.params.date2
+    conn2.query("SELECT * FROM formcom WHERE DATE_FORMAT(cm_date,'%Y-%m-%d') BETWEEN ? AND ? ORDER BY status ASC, dateres ASC", [date1, date2], (err, t1) => {
+        t1 = t1.map(d => {
+            if (d.date != null)
+                d.date = "วันที่ " + formatDate(d.date.toISOString().split('T')[0]) + " เวลา " + (d.date.toISOString().split('T')[1]).split(".")[0] + " น.";
+            if (d.dateres != null)
+                d.dateres = " วันที่ " + formatDate(d.dateres.toISOString().split('T')[0]) + " เวลา " + (d.dateres.toISOString().split('T')[1]).split(".")[0] + " น.";
+            return d;
+        })
+        // console.log(date1, date2)
+        res.send(t1)
+        
+    })
+})
+
+app.get("/form2/users/:us", jsonParser, verifyToken, (req, res, next) => {
     const us = req.params.us
     conn2.query("SELECT * FROM formcom WHERE hos_id = ? AND fm_ac = 1 ORDER BY status ASC, dateres ASC", [us], (err, t1) => {
         t1 = t1.map(d => {
+            // d.citizen = encode(d.citizen)
+            // d.house = encode(d.house)
+            // d.fname = encode(d.fname)
+            // d.lname = encode(d.lname)
             if (d.date != null)
                 d.date = "วันที่ " + formatDate(d.date.toISOString().split('T')[0]) + " เวลา " + (d.date.toISOString().split('T')[1]).split(".")[0] + " น.";
             if (d.dateres != null)
@@ -177,21 +243,23 @@ app.get("/form2/:id", jsonParser, (req, res, next) => {
 })
 
 app.post('/status2', jsonParser, (req, res, next) => {
-    var Isql = "INSERT INTO `carsmanage` (`us_id`, `fm_id`, `distance`, `car_name`, `c_start`, `c_end`, `cm_status`, `cm_date`, `des`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-    var IV = [req.body.us_id, req.body.fm_id, req.body.distance, req.body.carname, req.body.cstart, req.body.cend, req.body.cm_status, req.body.cm_date, req.body.des]
+    var Isql = "INSERT INTO `carsmanage` (`us_id`, `fm_id`, `distance`, `car_name`, `car_type`, `car_other`, `c_start`, `c_end`, `cm_status`, `cm_date`, `des`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    var IV = [req.body.us_id, req.body.fm_id, req.body.distance, req.body.car_name, req.body.car_type, req.body.car_other,  req.body.cstart, req.body.cend, req.body.cm_status, req.body.cm_date, req.body.des]
     conn2.execute(Isql, IV, (err, results, fields) => {
+        // console.log(res)
         if (err) {
             res.json({ status: 'error', massage: err })
             //return
         } else
             res.json({ status: 'ok' })
+            
     })
 })
 
 app.put("/statu2/edit/:id", jsonParser, (req, res, next) => {
     const id = req.params.id
-    const sql = "UPDATE `carsmanage` SET distance = ?, c_start = ?, c_end = ? WHERE `carsmanage`.`cm_id` = ?";
-    conn2.execute(sql, [req.body.dis, req.body.carname, req.body.cs, req.body.ce, id], (err, ev, fields) => {
+    const sql = "UPDATE `carsmanage` SET distance = ?, car_name = ?, car_type = ?, car_other = ?, c_start = ?, c_end = ? WHERE `carsmanage`.`cm_id` = ?";
+    conn2.execute(sql, [req.body.dis, req.body.car_name, req.body.car_type, req.body.car_other, req.body.cs, req.body.ce, id], (err, ev, fields) => {
         if (err) {
             res.json({ status: "erorr", massage: err });
             //return;
@@ -282,6 +350,8 @@ app.get("/excal2/:id", (req, res) => {
             ws.cell(1, 60).string("หมายเหตุยกเลิก");
             ws.cell(1, 61).string("ยกเลิกระบุ");
             ws.cell(1, 62).string("ทะเบียนรถ");
+            ws.cell(1, 63).string("ประเภทรถ");
+            ws.cell(1, 64).string("ประเภทรถอื่นๆ");
             // ws.cell(1, 53).string("สถานะขอรถ");
 
             t1.map((t, i) => {
@@ -373,66 +443,7 @@ app.get("/excal2/:id", (req, res) => {
                     t.ac_detail = "อื่นๆ"
                 }
 
-                // ws.cell(i + 2, 1).number(t.fm_id);
-                // ws.cell(i + 2, 2).string(t.hos_name);
-                // ws.cell(i + 2, 3).string(t.way);
-                // ws.cell(i + 2, 4).string(`${t.date.getDate()}/${t.date.getMonth() + 1}/${t.date.getFullYear() + 543}`);
-                // ws.cell(i + 2, 5).string(`${t.date.getHours()}:${t.date.getMinutes()}:${t.date.getSeconds()}`);
-                // ws.cell(i + 2, 6).string(t.citizen);
-                // ws.cell(i + 2, 7).string(t.pre_name);
-                // ws.cell(i + 2, 8).string(t.fname);
-                // ws.cell(i + 2, 9).string(t.lname);
-                // ws.cell(i + 2, 10).number(t.age);
-                // ws.cell(i + 2, 11).number(condition[0]);
-                // ws.cell(i + 2, 12).number(condition[6]);
-                // ws.cell(i + 2, 13).number(condition[7]);
-                // ws.cell(i + 2, 14).number(condition[8]);
-                // ws.cell(i + 2, 15).number(condition[9]);
-                // ws.cell(i + 2, 16).number(condition[10]);
-                // ws.cell(i + 2, 17).number(condition[11]);
-                // ws.cell(i + 2, 18).number(condition[12]);
-                // ws.cell(i + 2, 19).number(condition[13]);
-                // ws.cell(i + 2, 20).number(condition[1]);
-                // ws.cell(i + 2, 21).number(condition[2]);
-                // ws.cell(i + 2, 22).number(condition[3]);
-                // ws.cell(i + 2, 23).number(condition[4]);
-                // ws.cell(i + 2, 24).number(condition[5]);
-                // ws.cell(i + 2, 25).string(condn);
-                // ws.cell(i + 2, 26).string(dispass);
-                // ws.cell(i + 2, 27).string(t.house);
-                // ws.cell(i + 2, 28).string(t.street);
-                // ws.cell(i + 2, 29).string(t.subdis);
-                // ws.cell(i + 2, 30).string(t.district01);
-                // ws.cell(i + 2, 31).string(t.province);
-                // ws.cell(i + 2, 32).string(t.zipcode);
-                // ws.cell(i + 2, 33).string(t.call);
-                // ws.cell(i + 2, 34).string(`${t.dateres.getDate()}/${t.dateres.getMonth() + 1}/${t.dateres.getFullYear() + 543}`);
-                // ws.cell(i + 2, 35).string(`${t.dateres.getHours()}:${t.dateres.getMinutes()}:${t.dateres.getSeconds()}`);
-                // ws.cell(i + 2, 36).string(t.met_name);
-                // ws.cell(i + 2, 37).string(start[0]);
-                // ws.cell(i + 2, 38).string(start[1]);
-                // ws.cell(i + 2, 39).string(start[2]);
-                // ws.cell(i + 2, 40).string(start[3]);
-                // ws.cell(i + 2, 41).string(start[4]);
-                // ws.cell(i + 2, 42).string(start[5]);
-                // ws.cell(i + 2, 43).string(start[6]);
-                // ws.cell(i + 2, 44).string(end[0]);
-                // ws.cell(i + 2, 45).string(end[1]);
-                // ws.cell(i + 2, 46).string(end[2]);
-                // ws.cell(i + 2, 47).string(end[3]);
-                // ws.cell(i + 2, 48).string(end[4]);
-                // ws.cell(i + 2, 49).string(end[5]);
-                // ws.cell(i + 2, 50).string(end[7]);
-                // ws.cell(i + 2, 51).string(date);
-                // ws.cell(i + 2, 52).string(time);
-                // ws.cell(i + 2, 53).string(t.editer);
-                // ws.cell(i + 2, 54).string(t.ac_detail);
-                // ws.cell(i + 2, 55).number(t.distance);
-                // ws.cell(i + 2, 56).string(t.c_start);
-                // ws.cell(i + 2, 57).string(t.c_end);
-                // ws.cell(i + 2, 58).string(String(t.status));
-                // ws.cell(i + 2, 59).string(des);
-                // ws.cell(i + 2, 60).string(deca);
+             
                 ws.cell(i + 2, 1).number(t.fm_id);
                 ws.cell(i + 2, 2).string(t.hos_name);
                 ws.cell(i + 2, 3).string(t.way);
@@ -495,6 +506,8 @@ app.get("/excal2/:id", (req, res) => {
                 ws.cell(i + 2, 60).string(des);
                 ws.cell(i + 2, 61).string(deca);
                 ws.cell(i + 2, 62).string(t.car_name);
+                ws.cell(i + 2, 63).string(t.car_type);
+                ws.cell(i + 2, 64).string(t.car_other);
                 // ws.cell(i + 2, 53).number(t.fm_ac);
             }
             )
@@ -757,6 +770,8 @@ app.get("/excel2", (req, res) => {
             ws.cell(1, 60).string("หมายเหตุยกเลิก");
             ws.cell(1, 61).string("ยกเลิกระบุ");
             ws.cell(1, 62).string("ทะเบียนรถ");
+            ws.cell(1, 63).string("ประเภทรถ");
+            ws.cell(1, 64).string("ประเภทรถอื่นๆ");
 
             t1.map((t, i) => {
 
@@ -904,6 +919,8 @@ app.get("/excel2", (req, res) => {
                 ws.cell(i + 2, 60).string(des);
                 ws.cell(i + 2, 61).string(deca);
                 ws.cell(i + 2, 62).string(t.car_name);
+                ws.cell(i + 2, 63).string(t.car_type);
+                ws.cell(i + 2, 64).string(t.car_other);
             }
             )
             wb.write('ExcelFile.xlsx', res);
