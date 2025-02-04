@@ -210,7 +210,25 @@ app.get("/formq/:date1/:date2", jsonParser, (req, res, next) => {
     })
 })
 
-app.get("/form2/users/:us", jsonParser, verifyToken, (req, res, next) => {
+app.get("/form2/users/:us", jsonParser, (req, res, next) => {
+    const us = req.params.us
+    conn2.query("SELECT * FROM formcom WHERE hos_id = ? AND fm_ac = 1 ORDER BY status ASC, dateres ASC", [us], (err, t1) => {
+        t1 = t1.map(d => {
+            // d.citizen = encode(d.citizen)
+            // d.house = encode(d.house)
+            // d.fname = encode(d.fname)
+            // d.lname = encode(d.lname)
+            if (d.date != null)
+                d.date = "วันที่ " + formatDate(d.date.toISOString().split('T')[0]) + " เวลา " + (d.date.toISOString().split('T')[1]).split(".")[0] + " น.";
+            if (d.dateres != null)
+                d.dateres = " วันที่ " + formatDate(d.dateres.toISOString().split('T')[0]) + " เวลา " + (d.dateres.toISOString().split('T')[1]).split(".")[0] + " น.";
+            return d;
+        })
+        res.send(t1)
+    })
+})
+
+app.get("/form2/users2/:us", jsonParser, verifyToken, (req, res, next) => {
     const us = req.params.us
     conn2.query("SELECT * FROM formcom WHERE hos_id = ? AND fm_ac = 1 ORDER BY status ASC, dateres ASC", [us], (err, t1) => {
         t1 = t1.map(d => {
@@ -244,7 +262,7 @@ app.get("/form2/:id", jsonParser, (req, res, next) => {
 
 app.post('/status2', jsonParser, (req, res, next) => {
     var Isql = "INSERT INTO `carsmanage` (`us_id`, `fm_id`, `distance`, `car_name`, `car_type`, `car_other`, `c_start`, `c_end`, `cm_status`, `cm_date`, `des`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-    var IV = [req.body.us_id, req.body.fm_id, req.body.distance, req.body.car_name, req.body.car_type, req.body.car_other,  req.body.cstart, req.body.cend, req.body.cm_status, req.body.cm_date, req.body.des]
+    var IV = [req.body.us_id, req.body.fm_id, req.body.distance, req.body.car_name, 1, null,  req.body.cstart, req.body.cend, req.body.cm_status, req.body.cm_date, req.body.des]
     conn2.execute(Isql, IV, (err, results, fields) => {
         // console.log(res)
         if (err) {
