@@ -210,6 +210,306 @@ app.get("/formq/:date1/:date2", jsonParser, (req, res, next) => {
     })
 })
 
+app.get("/formcci/:id/:date1/:date2", jsonParser, (req, res, next) => {
+    const id = req.params.id
+    const date1 = req.params.date1
+    const date2 = req.params.date2
+    var sql = "SELECT * FROM formcom WHERE `status` = 1 AND hos_id = ? AND DATE(cm_date) BETWEEN ? AND ?"
+    var data = [id, date1, date2]
+    if (id === "14"){
+        sql = "SELECT * FROM formcom WHERE `status` = 1 AND DATE(cm_date) BETWEEN ? AND ?"
+        data = [date1, date2]
+    }
+    conn2.query(sql, data, (err, t1) => {
+        t1 = t1.map(d => {
+            if (d.date != null)
+                d.date = "วันที่ " + formatDate(d.date.toISOString().split('T')[0]) + " เวลา " + (d.date.toISOString().split('T')[1]).split(".")[0] + " น.";
+            if (d.dateres != null)
+                d.dateres = " วันที่ " + formatDate(d.dateres.toISOString().split('T')[0]) + " เวลา " + (d.dateres.toISOString().split('T')[1]).split(".")[0] + " น.";
+            return d;
+        })
+        // console.log(date1, date2)
+        res.send(t1)
+        
+    })
+})
+
+app.get("/formccall/:date1/:date2", jsonParser, (req, res, next) => {
+
+    const date1 = req.params.date1
+    const date2 = req.params.date2
+    const sql = "SELECT hos_name , COUNT(DISTINCT fm_id) as alls, COUNT(DISTINCT citizen) as complete FROM formcom WHERE status = 1 AND DATE(cm_date) BETWEEN ? AND ? group by  hos_id"
+
+    conn2.query(sql, [date1, date2], (err, t1) => {
+        
+        res.send(t1)
+    })
+})
+
+app.get("/formcc/:id/:date1/:date2", (req, res) => {
+    const id = req.params.id
+    const date1 = req.params.date1
+    const date2 = req.params.date2
+    var sql = "SELECT * FROM formcom WHERE `status` = 1 AND hos_id = ? AND DATE(cm_date) BETWEEN ? AND ?"
+    var data = [id, date1, date2]
+    if (id === "14"){
+        sql = "SELECT * FROM formcom WHERE `status` = 1 AND DATE(cm_date) BETWEEN ? AND ?"
+        data = [date1, date2]
+    }
+    conn2.query(sql, data, (err, t1) => {
+
+        if (err) {
+            res.json({ status: "erorr", massage: err });
+        }
+        else {
+
+            var wb = new xl.Workbook();
+            var ws = wb.addWorksheet('Sheet 1');
+
+            ws.cell(1, 1).string("ลำดับที่");
+            ws.cell(1, 2).string("โรงพยาบาล");
+            ws.cell(1, 3).string("ช่องทางเข้ารับบริการ");
+            ws.cell(1, 4).string("วันที่จอง");
+            ws.cell(1, 5).string("เวลาที่จอง");
+            ws.cell(1, 6).string("เลขบัตรประชาชน");
+            ws.cell(1, 7).string("คำนำหน้าชื่อ");
+            ws.cell(1, 8).string("ชื่อ");
+            ws.cell(1, 9).string("นามสกุล");
+            ws.cell(1, 10).string("อายุ(ปี)");
+            ws.cell(1, 11).string("ผู้สูงอายุ");
+            ws.cell(1, 12).string("คนพิการ");
+            ws.cell(1, 13).string("ผู้มีความยากลำบากเข้าถึงบริการ");
+            ws.cell(1, 14).string("การเห็น");  // shifted to account for the new column
+            ws.cell(1, 15).string("การได้ยินหรือสื่อความหมาย");
+            ws.cell(1, 16).string("การเคลื่อนไหวหรือทางร่างกาย");
+            ws.cell(1, 17).string("จิตใจหรือพฤติกรรม");
+            ws.cell(1, 18).string("สติปัญญา");
+            ws.cell(1, 19).string("การเรียนรู้");
+            ws.cell(1, 20).string("ออทิสติก");
+            ws.cell(1, 21).string("ADL 5-12");
+            ws.cell(1, 22).string("มีปัญหาด้านการเคลื่อนไหว");
+            ws.cell(1, 23).string("มีนัดรักษาต่อเนื่องกับโรงพยาบาล");
+            ws.cell(1, 24).string("มีปัญหาด้านเศรษฐานะ");
+            ws.cell(1, 25).string("อื่น ๆ ระบุ");
+            ws.cell(1, 26).string("เงื่อนไขระบุ");
+            ws.cell(1, 27).string("ไม่เข้าเงื่อนไขระบุ");
+            ws.cell(1, 28).string("บ้านเลขที่");
+            ws.cell(1, 29).string("ถนน");
+            ws.cell(1, 30).string("แขวง");
+            ws.cell(1, 31).string("เขต");
+            ws.cell(1, 32).string("จังหวัด");
+            ws.cell(1, 33).string("รหัสไปรษณี");
+            ws.cell(1, 34).string("เบอร์โทรศัพท์");
+            ws.cell(1, 35).string("วันที่ขอรถ");
+            ws.cell(1, 36).string("เวลาที่ขอรถ");
+            ws.cell(1, 37).string("วิธีการ");
+            ws.cell(1, 38).string("สถานที่ต้นทาง");
+            ws.cell(1, 39).string("เลขที่ต้นทาง");
+            ws.cell(1, 40).string("ถนนต้นทาง");
+            ws.cell(1, 41).string("แขวงต้นทาง");
+            ws.cell(1, 42).string("เขตต้นทาง");
+            ws.cell(1, 43).string("จังหวัดต้นทาง");
+            ws.cell(1, 44).string("รหัสไปรษณีต้นทาง");
+            ws.cell(1, 45).string("สถานที่ปลายทาง");
+            ws.cell(1, 46).string("เลขที่ปลายทาง");
+            ws.cell(1, 47).string("ถนนปลายทาง");
+            ws.cell(1, 48).string("แขวงปลายทาง");
+            ws.cell(1, 49).string("เขตปลายทาง");
+            ws.cell(1, 50).string("จังหวัดปลายทาง");
+            ws.cell(1, 51).string("รหัสไปรษณีปลายทาง");
+            ws.cell(1, 52).string("วันส่งข้อมูล");
+            ws.cell(1, 53).string("เวลาส่งข้อมูล");
+            ws.cell(1, 54).string("ชื่อผู้บันทึก");
+            ws.cell(1, 55).string("สรุปผลการให้บริการ");
+            ws.cell(1, 56).string("ระยะทาง(กม.)");
+            ws.cell(1, 57).string("เวลาไป");
+            ws.cell(1, 58).string("เวลากลับ");
+            ws.cell(1, 59).string("สถานะ");
+            ws.cell(1, 60).string("หมายเหตุยกเลิก");
+            ws.cell(1, 61).string("ยกเลิกระบุ");
+            ws.cell(1, 62).string("ทะเบียนรถ");
+            ws.cell(1, 63).string("ประเภทรถ");
+            ws.cell(1, 64).string("ประเภทรถอื่นๆ");
+            ws.cell(1, 65).string("วันที่บริการสำเร็จ");
+            ws.cell(1, 66).string("เวลาบริการสำเร็จ");
+            // ws.cell(1, 53).string("สถานะขอรถ");
+
+            t1.map((t, i) => {
+
+                var start
+                var end
+                var condition
+                var condn = "-"
+                var dispass = "-"
+                var time
+                var date
+                var deca = "-"
+                var des
+                
+
+                if (t.start.split(" "))
+                    start = t.start.split(" ")
+                else
+                    start = t.start
+
+                if (t.end.split(" "))
+                    end = t.end.split(" ")
+                else
+                    end = t.end
+
+                if (t.condition.split(", ")) {
+                    condition = t.condition.split(", ")
+                    for (var j = 0; j <= 14; j++) {
+                        if (condition[j] === "-" || condition[j] === undefined)
+                            condition[j] = 0
+                        else {
+                            if (j === 5) {
+                                condn = condition[j]
+                            }
+                            condition[j] = 1
+                        }
+                    }
+                }
+                else {
+                    condition = t.condition
+                }
+
+
+                if (t.fm_time === null) {
+                    date = null
+                    time = null
+                }
+                else {
+                    date = `${t.fm_time.getDate()}/${t.fm_time.getMonth() + 1}/${t.fm_time.getFullYear() + 543}`
+                    time = `${t.fm_time.getHours()}:${t.fm_time.getMinutes()}:${t.fm_time.getSeconds()}`
+                }
+
+                if (t.cm_date === null) {
+                    cmd = null
+                    cmt = null
+                }
+                else {
+                    cmd = `${t.cm_date.getDate()}/${t.cm_date.getMonth() + 1}/${t.cm_date.getFullYear() + 543}`
+                    cmt = `${t.cm_date.getHours()}:${t.cm_date.getMinutes()}:${t.cm_date.getSeconds()}`
+                }
+
+                if (t.distance === null) {
+                    t.distance = 0
+                }
+                // if (t.met_name === "-") {
+                //     t.met_name = "ไม่เข้าเงื่อนไขการขอใช้รถ"
+                // }
+                if (t.status === null) {
+                    t.status = "รอดำเนินการ"
+                    if (t.ac_detail !== "เข้าเงื่อนไขการขอใช้รถ") {
+                        t.status = "แนะนำบริการอื่น"
+                    }
+                }
+                if (t.status === 1) {
+                    t.status = "ดำเนินการสำเร็จ"
+                }
+                if (t.status === 0) {
+                    t.status = "ยกเลิก"
+                }
+                if (t.des === null) {
+                    des = ""
+                } else if (t.des === "ยกเลิกนัด รถไม่พร้อม") {
+                    des = "รถไม่พร้อม"
+                } else if (t.des === "ยกเลิกนัด รถไม่เพียงพอ") {
+                    des = "รถไม่เพียงพอ"
+                } else if (t.des === "ผู้ป่วยยกเลิกนัด") {
+                    des = "ผู้ป่วยยกเลิกนัด"
+                } else if (t.des === "") {
+                    des = ""
+                }
+                else {
+                    deca = t.des
+                    des = "อื่นๆ"
+                }
+                if (t.ac_detail === "แนะนำทำ Telemedicine" || t.ac_detail === "ส่งต่อเยี่ยมบ้านโดยโรงพยาบาล" || t.ac_detail === "ส่งต่อเยี่ยมบ้านโดยศูนย์บริการสาธารณสุข" || t.ac_detail === "เข้าเงื่อนไขการขอใช้รถ") {
+                    t.ac_detail = t.ac_detail
+                } else {
+                    dispass = t.ac_detail
+                    t.ac_detail = "อื่นๆ"
+                }
+
+             
+                ws.cell(i + 2, 1).number(t.fm_id);
+                ws.cell(i + 2, 2).string(t.hos_name);
+                ws.cell(i + 2, 3).string(t.way);
+                ws.cell(i + 2, 4).string(`${t.date.getDate()}/${t.date.getMonth() + 1}/${t.date.getFullYear() + 543}`);
+                ws.cell(i + 2, 5).string(`${t.date.getHours()}:${t.date.getMinutes()}:${t.date.getSeconds()}`);
+                ws.cell(i + 2, 6).string(t.citizen);
+                ws.cell(i + 2, 7).string(t.pre_name);
+                ws.cell(i + 2, 8).string(t.fname);
+                ws.cell(i + 2, 9).string(t.lname);
+                ws.cell(i + 2, 10).number(t.age);
+                ws.cell(i + 2, 11).number(condition[0]);
+                ws.cell(i + 2, 12).number(condition[6]);
+                ws.cell(i + 2, 13).number(condition[14]);
+                ws.cell(i + 2, 14).number(condition[7]);
+                ws.cell(i + 2, 15).number(condition[8]);
+                ws.cell(i + 2, 16).number(condition[9]);
+                ws.cell(i + 2, 17).number(condition[10]);
+                ws.cell(i + 2, 18).number(condition[11]);
+                ws.cell(i + 2, 19).number(condition[12]);
+                ws.cell(i + 2, 20).number(condition[13]);
+                ws.cell(i + 2, 21).number(condition[1]);
+                ws.cell(i + 2, 22).number(condition[2]);
+                ws.cell(i + 2, 23).number(condition[3]);
+                ws.cell(i + 2, 24).number(condition[4]);
+                ws.cell(i + 2, 25).number(condition[5]);
+                ws.cell(i + 2, 26).string(condn);
+                ws.cell(i + 2, 27).string(dispass);
+                ws.cell(i + 2, 28).string(t.house);
+                ws.cell(i + 2, 29).string(t.street);
+                ws.cell(i + 2, 30).string(t.subdis);
+                ws.cell(i + 2, 31).string(t.district01);
+                ws.cell(i + 2, 32).string(t.province);
+                ws.cell(i + 2, 33).string(t.zipcode);
+                ws.cell(i + 2, 34).string(t.call);
+                ws.cell(i + 2, 35).string(`${t.dateres.getDate()}/${t.dateres.getMonth() + 1}/${t.dateres.getFullYear() + 543}`);
+                ws.cell(i + 2, 36).string(`${t.dateres.getHours()}:${t.dateres.getMinutes()}:${t.dateres.getSeconds()}`);
+                ws.cell(i + 2, 37).string(t.met_name);
+                ws.cell(i + 2, 38).string(start[0]);
+                ws.cell(i + 2, 39).string(start[1]);
+                ws.cell(i + 2, 40).string(start[2]);
+                ws.cell(i + 2, 41).string(start[3]);
+                ws.cell(i + 2, 42).string(start[4]);
+                ws.cell(i + 2, 43).string(start[5]);
+                ws.cell(i + 2, 44).string(start[6]);
+                ws.cell(i + 2, 45).string(end[0]);
+                ws.cell(i + 2, 46).string(end[1]);
+                ws.cell(i + 2, 47).string(end[2]);
+                ws.cell(i + 2, 48).string(end[3]);
+                ws.cell(i + 2, 49).string(end[4]);
+                ws.cell(i + 2, 50).string(end[5]);
+                ws.cell(i + 2, 51).string(end[7]);
+                ws.cell(i + 2, 52).string(date);
+                ws.cell(i + 2, 53).string(time);
+                ws.cell(i + 2, 54).string(t.editer);
+                ws.cell(i + 2, 55).string(t.ac_detail);
+                ws.cell(i + 2, 56).number(t.distance);
+                ws.cell(i + 2, 57).string(t.c_start);
+                ws.cell(i + 2, 58).string(t.c_end);
+                ws.cell(i + 2, 59).string(String(t.status));
+                ws.cell(i + 2, 60).string(des);
+                ws.cell(i + 2, 61).string(deca);
+                ws.cell(i + 2, 62).string(t.car_name);
+                ws.cell(i + 2, 63).string(t.car_type);
+                ws.cell(i + 2, 64).string(t.car_other);
+                ws.cell(i + 2, 65).string(cmd);
+                ws.cell(i + 2, 66).string(cmt);
+                // ws.cell(i + 2, 53).number(t.fm_ac);
+            }
+            )
+            wb.write('ExcelFile.xlsx', res);
+        }
+    }
+    )
+
+})
+
 app.get("/form2/users/:us", jsonParser, (req, res, next) => {
     const us = req.params.us
     conn2.query("SELECT * FROM formcom WHERE hos_id = ? AND fm_ac = 1 ORDER BY status ASC, dateres ASC", [us], (err, t1) => {
@@ -370,6 +670,8 @@ app.get("/excal2/:id", (req, res) => {
             ws.cell(1, 62).string("ทะเบียนรถ");
             ws.cell(1, 63).string("ประเภทรถ");
             ws.cell(1, 64).string("ประเภทรถอื่นๆ");
+            ws.cell(1, 65).string("วันที่บริการสำเร็จ");
+            ws.cell(1, 66).string("เวลาบริการสำเร็จ");
             // ws.cell(1, 53).string("สถานะขอรถ");
 
             t1.map((t, i) => {
@@ -381,6 +683,8 @@ app.get("/excal2/:id", (req, res) => {
                 var dispass = "-"
                 var time
                 var date
+                var cmd
+                var cmt
                 var deca = "-"
                 var des
                 
@@ -421,6 +725,16 @@ app.get("/excal2/:id", (req, res) => {
                     date = `${t.fm_time.getDate()}/${t.fm_time.getMonth() + 1}/${t.fm_time.getFullYear() + 543}`
                     time = `${t.fm_time.getHours()}:${t.fm_time.getMinutes()}:${t.fm_time.getSeconds()}`
                 }
+
+                if (t.cm_date === null) {
+                    cmd = null
+                    cmt = null
+                }
+                else {
+                    cmd = `${t.cm_date.getDate()}/${t.cm_date.getMonth() + 1}/${t.cm_date.getFullYear() + 543}`
+                    cmt = `${t.cm_date.getHours()}:${t.cm_date.getMinutes()}:${t.cm_date.getSeconds()}`
+                }
+
                 if (t.distance === null) {
                     t.distance = 0
                 }
@@ -526,6 +840,8 @@ app.get("/excal2/:id", (req, res) => {
                 ws.cell(i + 2, 62).string(t.car_name);
                 ws.cell(i + 2, 63).string(t.car_type);
                 ws.cell(i + 2, 64).string(t.car_other);
+                ws.cell(i + 2, 65).string(cmd);
+                ws.cell(i + 2, 66).string(cmt);
                 // ws.cell(i + 2, 53).number(t.fm_ac);
             }
             )
@@ -790,6 +1106,8 @@ app.get("/excel2", (req, res) => {
             ws.cell(1, 62).string("ทะเบียนรถ");
             ws.cell(1, 63).string("ประเภทรถ");
             ws.cell(1, 64).string("ประเภทรถอื่นๆ");
+            ws.cell(1, 65).string("วันที่บริการสำเร็จ");
+            ws.cell(1, 66).string("เวลาบริการสำเร็จ");
 
             t1.map((t, i) => {
 
@@ -800,6 +1118,8 @@ app.get("/excel2", (req, res) => {
                 var dispass = "-"
                 var time
                 var date
+                var cmd
+                var cmt
                 var deca = "-"
                 var des
                 
@@ -839,8 +1159,18 @@ app.get("/excel2", (req, res) => {
                 }
                 else {
                     date = `${t.fm_time.getDate()}/${t.fm_time.getMonth() + 1}/${t.fm_time.getFullYear() + 543}`
-                    time = `${t.fm_time.getHours()}:${t.fm_time.getMinutes()}:${t.fm_time.getSeconds() + 543}`
+                    time = `${t.fm_time.getHours()}:${t.fm_time.getMinutes()}:${t.fm_time.getSeconds()}`
                 }
+
+                if (t.cm_date === null) {
+                    cmd = null
+                    cmt = null
+                }
+                else {
+                    cmd = `${t.cm_date.getDate()}/${t.cm_date.getMonth() + 1}/${t.cm_date.getFullYear() + 543}`
+                    cmt = `${t.cm_date.getHours()}:${t.cm_date.getMinutes()}:${t.cm_date.getSeconds()}`
+                }
+
                 if (t.distance === null) {
                     t.distance = 0
                 }
@@ -939,6 +1269,8 @@ app.get("/excel2", (req, res) => {
                 ws.cell(i + 2, 62).string(t.car_name);
                 ws.cell(i + 2, 63).string(t.car_type);
                 ws.cell(i + 2, 64).string(t.car_other);
+                ws.cell(i + 2, 65).string(cmd);
+                ws.cell(i + 2, 66).string(cmt);
             }
             )
             wb.write('ExcelFile.xlsx', res);
