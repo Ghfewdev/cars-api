@@ -214,10 +214,10 @@ app.get("/formcci/:id/:date1/:date2", jsonParser, (req, res, next) => {
     const id = req.params.id
     const date1 = req.params.date1
     const date2 = req.params.date2
-    var sql = "SELECT * FROM formcom WHERE `status` = 1 AND hos_id = ? AND DATE(cm_date) BETWEEN ? AND ?"
+    var sql = "SELECT * FROM formcom WHERE `status` = 1 AND hos_id = ? AND DATE(dateres) BETWEEN ? AND ?"
     var data = [id, date1, date2]
     if (id === "14"){
-        sql = "SELECT * FROM formcom WHERE `status` = 1 AND DATE(cm_date) BETWEEN ? AND ?"
+        sql = "SELECT * FROM formcom WHERE `status` = 1 AND DATE(dateres) BETWEEN ? AND ?"
         data = [date1, date2]
     }
     conn2.query(sql, data, (err, t1) => {
@@ -238,7 +238,7 @@ app.get("/formccall/:date1/:date2", jsonParser, (req, res, next) => {
 
     const date1 = req.params.date1
     const date2 = req.params.date2
-    const sql = "SELECT hos_name , COUNT(DISTINCT fm_id) as alls, COUNT(DISTINCT citizen) as complete FROM formcom WHERE status = 1 AND DATE(cm_date) BETWEEN ? AND ? group by  hos_id"
+    const sql = "SELECT hos_name , COUNT(DISTINCT fm_id) as alls, COUNT(DISTINCT citizen) as complete FROM formcom WHERE status = 1 AND DATE(dateres) BETWEEN ? AND ? group by hos_id"
 
     conn2.query(sql, [date1, date2], (err, t1) => {
         
@@ -250,10 +250,10 @@ app.get("/formcc/:id/:date1/:date2", (req, res) => {
     const id = req.params.id
     const date1 = req.params.date1
     const date2 = req.params.date2
-    var sql = "SELECT * FROM formcom WHERE `status` = 1 AND hos_id = ? AND DATE(cm_date) BETWEEN ? AND ?"
+    var sql = "SELECT * FROM formcom WHERE `status` = 1 AND hos_id = ? AND DATE(dateres) BETWEEN ? AND ?"
     var data = [id, date1, date2]
     if (id === "14"){
-        sql = "SELECT * FROM formcom WHERE `status` = 1 AND DATE(cm_date) BETWEEN ? AND ?"
+        sql = "SELECT * FROM formcom WHERE `status` = 1 AND DATE(dateres) BETWEEN ? AND ?"
         data = [date1, date2]
     }
     conn2.query(sql, data, (err, t1) => {
@@ -484,7 +484,7 @@ app.get("/formcc/:id/:date1/:date2", (req, res) => {
                 ws.cell(i + 2, 48).string(end[3]);
                 ws.cell(i + 2, 49).string(end[4]);
                 ws.cell(i + 2, 50).string(end[5]);
-                ws.cell(i + 2, 51).string(end[7]);
+                ws.cell(i + 2, 51).string(end[6]);
                 ws.cell(i + 2, 52).string(date);
                 ws.cell(i + 2, 53).string(time);
                 ws.cell(i + 2, 54).string(t.editer);
@@ -528,6 +528,7 @@ app.get("/form2/users/:us", jsonParser, (req, res, next) => {
     })
 })
 
+
 app.get("/form2/users2/:us", jsonParser, verifyToken, (req, res, next) => {
     const us = req.params.us
     conn2.query("SELECT * FROM formcom WHERE hos_id = ? AND fm_ac = 1 ORDER BY status ASC, dateres ASC", [us], (err, t1) => {
@@ -541,6 +542,194 @@ app.get("/form2/users2/:us", jsonParser, verifyToken, (req, res, next) => {
             if (d.dateres != null)
                 d.dateres = " วันที่ " + formatDate(d.dateres.toISOString().split('T')[0]) + " เวลา " + (d.dateres.toISOString().split('T')[1]).split(".")[0] + " น.";
             return d;
+        })
+        res.send(t1)
+    })
+})
+
+app.get("/form2/useall2", jsonParser, verifyToken, (req, res, next) => {
+    conn2.query("SELECT * FROM formcom WHERE fm_ac = 1 ORDER BY status ASC, dateres ASC", (err, t1) => {
+        t1 = t1.map(d => {
+
+                var condition
+                var condn = "-"
+                var dispass = "-"
+                var time
+                var date
+                var cmd
+                var cmt
+                var deca = "-"
+                var des
+
+            // const [
+            //     elderly, disabilities, difficulty, vision, communication, 
+            //     physical, mental, intellectual, learning, autism, 
+            //     adl, mobility, scheduled, financial, others
+            // ] = d.condition.split(', ').map(s => s.trim());
+            // // d.citizen = encode(d.citizen)
+            // const conditions = {
+            //     elderly, disabilities, difficulty, vision, communication, 
+            //     physical, mental, intellectual, learning, autism, 
+            //     adl, mobility, scheduled, financial, others
+            // }
+
+            // Object.keys(conditions).forEach(key => {
+            //     conditions[key] = conditions[key] === "-" ? 0 : 1;
+            // });
+
+            // d.condition = conditions
+
+            // if (d.date != null)
+            //     d.date = "วันที่ " + formatDate(d.date.toISOString().split('T')[0]) + " เวลา " + (d.date.toISOString().split('T')[1]).split(".")[0] + " น.";
+            // if (d.dateres != null)
+            //     d.dateres = " วันที่ " + formatDate(d.dateres.toISOString().split('T')[0]) + " เวลา " + (d.dateres.toISOString().split('T')[1]).split(".")[0] + " น.";
+            // if (d.fm_time != null)
+            //     d.fm_time = " วันที่ " + formatDate(d.fm_time.toISOString().split('T')[0]) + " เวลา " + (d.fm_time.toISOString().split('T')[1]).split(".")[0] + " น.";
+            
+            if (d.condition.split(", ")) {
+                condition = d.condition.split(", ")
+                for (var j = 0; j <= 14; j++) {
+                    if (condition[j] === "-" || condition[j] === undefined)
+                        condition[j] = 0
+                    else {
+                        if (j === 5) {
+                            condn = condition[j]
+                        }
+                        condition[j] = 1
+                    }
+                }
+            }
+            else {
+                condition = d.condition
+            }
+
+            if (d.fm_time === null) {
+                date = null
+                time = null
+            }
+            else {
+                date = `${d.fm_time.getDate()}/${d.fm_time.getMonth() + 1}/${d.fm_time.getFullYear() + 543}`
+                time = `${d.fm_time.getHours()}:${d.fm_time.getMinutes()}:${d.fm_time.getSeconds()}`
+            }
+
+            if (d.cm_date === null) {
+                cmd = null
+                cmt = null
+            }
+            else {
+                cmd = `${d.cm_date.getDate()}/${d.cm_date.getMonth() + 1}/${d.cm_date.getFullYear() + 543}`
+                cmt = `${d.cm_date.getHours()}:${d.cm_date.getMinutes()}:${d.cm_date.getSeconds()}`
+            }
+
+            if (d.distance === null) {
+                d.distance = 0
+            }
+            // if (t.met_name === "-") {
+            //     t.met_name = "ไม่เข้าเงื่อนไขการขอใช้รถ"
+            // }
+            if (d.status === null) {
+                d.status = "รอดำเนินการ"
+                if (d.ac_detail !== "เข้าเงื่อนไขการขอใช้รถ") {
+                    d.status = "แนะนำบริการอื่น"
+                }
+            }
+            if (d.status === 1) {
+                d.status = "ดำเนินการสำเร็จ"
+            }
+            if (d.status === 0) {
+                d.status = "ยกเลิก"
+            }
+            if (d.des === null) {
+                des = ""
+            } else if (d.des === "ยกเลิกนัด รถไม่พร้อม") {
+                des = "รถไม่พร้อม"
+            } else if (d.des === "ยกเลิกนัด รถไม่เพียงพอ") {
+                des = "รถไม่เพียงพอ"
+            } else if (d.des === "ผู้ป่วยยกเลิกนัด") {
+                des = "ผู้ป่วยยกเลิกนัด"
+            } else if (d.des === "") {
+                des = ""
+            }
+            else {
+                deca = d.des
+                des = "อื่นๆ"
+            }
+            if (d.ac_detail === "แนะนำทำ Telemedicine" || d.ac_detail === "ส่งต่อเยี่ยมบ้านโดยโรงพยาบาล" || d.ac_detail === "ส่งต่อเยี่ยมบ้านโดยศูนย์บริการสาธารณสุข" || d.ac_detail === "เข้าเงื่อนไขการขอใช้รถ") {
+                d.ac_detail = d.ac_detail
+            } else {
+                dispass = d.ac_detail
+                d.ac_detail = "อื่นๆ"
+            }
+
+            return {
+                "ลำดับที่": d.fm_id,
+                "ชื่อโรงพยาบาล": d.hos_name,
+                "ช่องทางเข้ารับบริการ": d.way,
+                "วันที่จอง": `${d.date.getDate()}/${d.date.getMonth() + 1}/${d.date.getFullYear() + 543}`,
+                "เวลาที่จอง": `${d.date.getHours()}:${d.date.getMinutes()}:${d.date.getSeconds()}`,
+                "เลขบัตรประชาชน": d.citizen,
+                "คำนำหน้าชื่อ": d.pre_name,
+                "ชื่อ": d.fname,
+                "นามสกุล": d.lname,
+                "อายุ(ปี)": d.age,
+                "ผู้สูงอายุ": condition[0],
+                "คนพิการ": condition[6],
+                "ผู้มีความยากลำบากเข้าถึงบริการ": condition[14],
+                "การเห็น": condition[7],
+                "การได้ยินหรือสื่อความหมาย": condition[8],
+                "การเคลื่อนไหวหรือทางร่างกาย": condition[9],
+                "จิตใจหรือพฤติกรรม": condition[10],
+                "สติปัญญา": condition[11],
+                "การเรียนรู้": condition[12],
+                "ออทิสติก": condition[13],
+                "ADL 5-12": condition[1],
+                "มีปัญหาด้านการเคลื่อนไหว": condition[2],
+                "มีนัดรักษาต่อเนื่องกับโรงพยาบาล": condition[3],
+                "มีปัญหาด้านเศรษฐานะ": condition[4],
+                "อื่น ๆ ระบุ": condition[5],
+                "เงื่อนไขระบุ": condn,
+                "ไม่เข้าเงื่อนไขระบุ": dispass,
+                "บ้านเลขที่": d.house,
+                "ถนน": d.street,
+                "แขวง": d.subdis,
+                "เขต": d.district01,
+                "จังหวัด": d.province,
+                "รหัสไปรษณี": d.zipcode,
+                "เบอร์โทรศัพท์": d.call,
+                "วันที่ขอรถ": `${d.dateres.getDate()}/${d.dateres.getMonth() + 1}/${d.dateres.getFullYear() + 543}`,
+                "เวลาที่ขอรถ": `${d.dateres.getHours()}:${d.dateres.getMinutes()}:${d.dateres.getSeconds()}`,
+                "วิธีการ": d.met_name,
+                "สถานที่ต้นทาง": d.start.split(" ")[0],
+                "เลขที่ต้นทาง": d.start.split(" ")[1],
+                "ถนนต้นทาง": d.start.split(" ")[2],
+                "แขวงต้นทาง": d.start.split(" ")[3],
+                "เขตต้นทาง": d.start.split(" ")[4],
+                "จังหวัดต้นทาง": d.start.split(" ")[5],
+                "รหัสไปรษณีต้นทาง": d.start.split(" ")[6],
+                "สถานที่ปลายทาง": d.end.split(" ")[0],
+                "เลขที่ปลายทาง": d.end.split(" ")[1],
+                "ถนนปลายทาง": d.end.split(" ")[2],
+                "แขวงปลายทาง": d.end.split(" ")[3],
+                "เขตปลายทาง": d.end.split(" ")[4],
+                "จังหวัดปลายทาง": d.end.split(" ")[5],
+                "รหัสไปรษณีปลายทาง": d.end.split(" ")[6],
+                "วันส่งข้อมูล": date,
+                "เวลาส่งข้อมูล": time,
+                "ชื่อผู้บันทึก": d.editer,
+                "สรุปผลการให้บริการ": d.ac_detail,
+                "ระยะทาง(กม.)": d.distance,
+                "เวลาไป": d.c_start,
+                "เวลากลับ": d.c_end,
+                "สถานะ": String(d.status),
+                "หมายเหตุยกเลิก": des,
+                "ยกเลิกระบุ": deca,
+                "ทะเบียนรถ": d.car_name,
+                "ประเภทรถ": d.car_type,
+                "ประเภทรถอื่นๆ": d.car_other,
+                "วันที่บริการสำเร็จ": cmd,
+                "เวลาบริการสำเร็จ": cmt,
+                
+            }
         })
         res.send(t1)
     })
@@ -826,7 +1015,8 @@ app.get("/excal2/:id", (req, res) => {
                 ws.cell(i + 2, 48).string(end[3]);
                 ws.cell(i + 2, 49).string(end[4]);
                 ws.cell(i + 2, 50).string(end[5]);
-                ws.cell(i + 2, 51).string(end[7]);
+                ws.cell(i + 2, 51).string(end[6]);
+                // ws.cell(i + 2, 51).string(end[7]);
                 ws.cell(i + 2, 52).string(date);
                 ws.cell(i + 2, 53).string(time);
                 ws.cell(i + 2, 54).string(t.editer);
@@ -1255,7 +1445,7 @@ app.get("/excel2", (req, res) => {
                 ws.cell(i + 2, 48).string(end[3]);
                 ws.cell(i + 2, 49).string(end[4]);
                 ws.cell(i + 2, 50).string(end[5]);
-                ws.cell(i + 2, 51).string(end[7]);
+                ws.cell(i + 2, 51).string(end[6]);
                 ws.cell(i + 2, 52).string(date);
                 ws.cell(i + 2, 53).string(time);
                 ws.cell(i + 2, 54).string(t.editer);
