@@ -10,7 +10,7 @@ const xl = require('excel4node');
 const { google } = require("googleapis");
 const fs = require("fs");
 
-const credentials = require("./g.json");
+const credentials = require("./data/g.json");
 
 const auth = new google.auth.GoogleAuth({
     credentials,
