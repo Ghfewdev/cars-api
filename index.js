@@ -1791,7 +1791,7 @@ app.post("/siteup", verifyToken, jsonParser, async (req, res) => {
         const sheets = google.sheets({ version: "v4", auth: client });
 
         const spreadsheetId = "1xsTW3SDuwtVdOoSlAIv6YCrnkZ17VDISnNYzjCOoNZ4"; // ใส่ Spreadsheet ID
-        const range = "Sheet1"; // ระบุช่วงที่ต้องการอ่าน
+        const range = "sheet1"; // ระบุช่วงที่ต้องการอ่าน
 
         const header = [
             "ลำดับที่", "ชื่อโรงพยาบาล", "ช่องทางเข้ารับบริการ", "วันที่จอง", "เวลาที่จอง", "เลขบัตรประชาชน", "คำนำหน้าชื่อ",
@@ -1809,7 +1809,7 @@ app.post("/siteup", verifyToken, jsonParser, async (req, res) => {
 
         const data = t1
 
-        console.log(data)
+        // console.log(data)
 
         const values = data.map(item => Object.values(item));
 
@@ -1837,6 +1837,38 @@ app.post("/siteup", verifyToken, jsonParser, async (req, res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
+
+app.post("/api/test", verifyToken, jsonParser, async (req, res) => { 
+
+    try {
+
+        const client = await auth.getClient();
+        const sheets = google.sheets({ version: "v4", auth: client });
+
+        const spreadsheetId = "1xsTW3SDuwtVdOoSlAIv6YCrnkZ17VDISnNYzjCOoNZ4"; // ใส่ Spreadsheet ID
+        const range = "sheet1"; // ระบุช่วงที่ต้องการอ่าน
+
+        const response = await sheets.spreadsheets.values.append({
+          spreadsheetId,
+          range,
+          valueInputOption: "RAW",
+          resource: { values: [["Hello", "World"]] },
+        });
+      
+        console.log("✅ Data written successfully:", response.data);
+        res.status(200).json("✅ Data written successfully");
+      } catch (error) {
+        if (error.response) {
+          console.error("🔥 Google API Error:", error.response.data.error);
+          res.status(400).json("❌ Unexpected Error");
+        } else {
+          console.error("❌ Unexpected Error:", error.message);
+          res.status(400).json("❌ Unexpected Error");
+        }
+      }
+
+})
+
 
 const port = process.env.PORT || 3001
 app.listen(port, () => {
